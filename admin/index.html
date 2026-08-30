@@ -30,18 +30,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
   <div class="sub">This page proves the real data loop. It is not part of the public pitch UI.</div>
 
   <section class="card">
-    <b>1. Supabase connection</b>
-    <div class="smallprint">Use the project URL plus the publishable/anon key. Never use a service-role or secret key in a browser.</div>
-    <div class="row" style="margin-top:12px">
-      <div class="field"><label>PROJECT URL</label><input id="projectUrl" value="https://jrrsfvrystagxxuuayjt.supabase.co"></div>
-      <div class="field"><label>PUBLISHABLE / ANON KEY</label><input id="anonKey" value="sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7" placeholder="Paste Supabase publishable key"></div>
-      <button class="primary" id="saveConfig">Save connection</button>
-    </div>
-    <div class="status" id="configStatus">Not connected yet.</div>
-  </section>
-
-  <section class="card">
-    <b>2. Commissioner login</b>
+    <b>Commissioner login</b>
     <div class="row" style="margin-top:12px">
       <div class="field"><label>EMAIL</label><input id="email" type="email" value="bron0623@gmail.com"></div>
       <div class="field"><label>PASSWORD</label><input id="password" type="password" placeholder="Commissioner password"></div>
@@ -53,7 +42,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 
   <section class="card hidden" id="adminCard">
     <div class="topline">
-      <div><b>3. Live-week data</b><div class="smallprint">For the POC, these are the 13 owners alive entering Week 6.</div></div>
+      <div><b>Live-week data</b><div class="smallprint">For the POC, these are the 13 owners alive entering Week 6.</div></div>
       <div id="statePill" class="pill">LOADING</div>
     </div>
 
@@ -106,12 +95,12 @@ function applyState(state){
   $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);
   const p=$('statePill');p.textContent=`WEEK ${state.current_week} · ${state.week_status}`;p.className='pill '+(state.week_status==='LIVE'?'live':'final');
 }
+const BTB_SUPABASE_URL='https://jrrsfvrystagxxuuayjt.supabase.co';
+const BTB_PUBLISHABLE_KEY='sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7';
 async function initClient(){
-  const url=$('projectUrl').value.trim(),key=$('anonKey').value.trim();
-  if(!url||!key)return setStatus('configStatus','Project URL and publishable key are required.',false);
-  localStorage.setItem('btb_url',url);localStorage.setItem('btb_key',key);
-  sb=supabase.createClient(url,key);setStatus('configStatus','Connection saved. Ready to log in.',true);
-  const {data:{session}}=await sb.auth.getSession();if(session)onLoggedIn(session.user);
+  sb=supabase.createClient(BTB_SUPABASE_URL,BTB_PUBLISHABLE_KEY);
+  const {data:{session}}=await sb.auth.getSession();
+  if(session)onLoggedIn(session.user);
 }
 async function onLoggedIn(user){
   $('adminCard').classList.remove('hidden');$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');
@@ -141,7 +130,6 @@ async function saveState(status){
   const {error}=await sb.from('league_state').update({current_week:week,week_status:status,show_remaining_players:$('showPlayers').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
   if(error)throw error;applyState({current_week:week,week_status:status});
 }
-$('saveConfig').addEventListener('click',initClient);
 $('loginBtn').addEventListener('click',async()=>{
   if(!sb)await initClient();if(!sb)return;setStatus('authStatus','Logging in...');
   const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
@@ -152,7 +140,7 @@ $('loadBtn').addEventListener('click',loadStateAndScores);
 $('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('finalizeBtn').addEventListener('click',async()=>{const week=Number($('weekNumber').value);if(!confirm(`Finalize Week ${week}?`))return;try{setStatus('saveStatus','Finalizing...');await saveScores();await saveState('COMPLETED');setStatus('saveStatus',`Week ${week} finalized.`,true)}catch(e){setStatus('saveStatus',e.message,false)}});
-$('projectUrl').value=localStorage.getItem('btb_url')||$('projectUrl').value;$('anonKey').value=localStorage.getItem('btb_key')||'';renderRows();if($('anonKey').value)initClient();
+renderRows();initClient();
 </script>
 </body>
 </html>
