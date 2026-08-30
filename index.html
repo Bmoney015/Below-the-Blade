@@ -579,7 +579,14 @@ select,input{
 .sweat-faction.yt{color:var(--f-wild)}
 .sweat-faction.sytyct{color:var(--f-sytyct)}
 
-</style></head>
+
+/* V25 Supabase-powered Final Sweat */
+.live-data-status{font-size:9px;color:#8fa1ad;margin-left:5px}
+.sweat-player-list{display:block;color:#b9c8d1;font-size:8px;margin-top:2px}
+.sweat-error{padding:12px;border:1px solid #74423e;border-radius:9px;color:#ef8a82;background:#291d20}
+
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
 <body>
 <header><div class="eyebrow">18 ENTER · ONE SURVIVES</div><h1>🪓 Below the Blade</h1><p>A companion analytics concept for the league stories the standings don't tell — survival margins, chopped-roster economics, player journeys and weekly superlatives.</p></header>
 <nav class="mock-nav">
@@ -603,79 +610,22 @@ select,input{
 <section class="final-sweat-panel" id="finalSweatPanel" hidden>
   <div class="final-sweat-head">
     <div>
-      <div class="kicker">🔴 WEEK 6 LIVE · MONDAY MORNING</div>
+      <div class="kicker" id="sweatKicker">🔴 LIVE WEEK</div>
       <h2>The Final Sweat</h2>
-      <p>Five teams are still staring at the blade heading into Monday night. Current-week data is partial; completed analytics below remain locked through Week 5.</p>
+      <p id="sweatIntro">Loading live-week data…</p>
     </div>
     <div class="sweat-cut">
       <small>CURRENT CHOP LINE</small>
-      <strong>87.3</strong>
-      <span>13 teams effectively through</span>
+      <strong id="sweatChopLine">—</strong>
+      <span id="sweatSafeCount">Loading…</span>
     </div>
   </div>
 
-  <div class="sweat-grid">
-    <article class="sweat-team leader-danger">
-      <div class="sweat-rank">14</div>
-      <img src="" alt="Davis" data-sweat-img="Davis">
-      <div class="sweat-main">
-        <div class="sweat-name">Davis <span class="sweat-faction ff">(F&amp;F)</span></div>
-        <div class="sweat-score">101.4 pts <span>+14.1 above blade</span></div>
-        <div class="sweat-context">Season rank entering week: <b>#11 / 13</b></div>
-      </div>
-      <div class="sweat-left"><b>0</b><span>starters left</span></div>
-    </article>
-
-    <article class="sweat-team">
-      <div class="sweat-rank">15</div>
-      <img src="" alt="Lou" data-sweat-img="Lou">
-      <div class="sweat-main">
-        <div class="sweat-name">Lou <span class="sweat-faction show">(SHOW)</span></div>
-        <div class="sweat-score">96.8 pts <span>+9.5 above blade</span></div>
-        <div class="sweat-context">Season rank entering week: <b>#8 / 13</b></div>
-      </div>
-      <div class="sweat-left"><b>1</b><span>starter left · WR</span></div>
-    </article>
-
-    <article class="sweat-team upset">
-      <div class="sweat-rank">16</div>
-      <img src="" alt="Nez" data-sweat-img="Nez">
-      <div class="sweat-main">
-        <div class="sweat-name">Nez <span class="sweat-faction ff">(F&amp;F)</span></div>
-        <div class="sweat-score">94.2 pts <span>+6.9 above blade</span></div>
-        <div class="sweat-context">Season rank entering week: <b>#1 / 13</b> · first Bottom-3 scare</div>
-      </div>
-      <div class="sweat-left"><b>2</b><span>starters left · RB, TE</span></div>
-    </article>
-
-    <article class="sweat-team">
-      <div class="sweat-rank">17</div>
-      <img src="" alt="Contestant 17" data-sweat-img="Contestant 17">
-      <div class="sweat-main">
-        <div class="sweat-name">Contestant 17 <span class="sweat-faction yt">(YT)</span></div>
-        <div class="sweat-score">91.7 pts <span>+4.4 above blade</span></div>
-        <div class="sweat-context">Season rank entering week: <b>#10 / 13</b></div>
-      </div>
-      <div class="sweat-left"><b>1</b><span>starter left · QB</span></div>
-    </article>
-
-    <article class="sweat-team blade">
-      <div class="sweat-rank">18</div>
-      <img src="" alt="Tony Squares" data-sweat-img="Tony Squares">
-      <div class="sweat-main">
-        <div class="sweat-name">Tony Squares <span class="sweat-faction show">(SHOW)</span> <span class="target-mini">🎯 BOUNTY</span></div>
-        <div class="sweat-score">87.3 pts <span>ON THE BLADE</span></div>
-        <div class="sweat-context">Season rank entering week: <b>#4 / 13</b> · bounty would add <b>$550</b></div>
-      </div>
-      <div class="sweat-left"><b>2</b><span>starters left · WR, K</span></div>
-    </article>
-  </div>
+  <div class="sweat-grid" id="sweatGrid"></div>
 
   <div class="sweat-story">
     <div class="story-icon">🔥</div>
-    <div>
-      <b>Show talking point:</b> The league's #1 season-points team is suddenly in the Bottom 3 — while Tony Squares is sitting directly on the blade with a $550 bounty attached.
-    </div>
+    <div id="sweatStory"><b>Show talking point:</b> Loading live-week context…</div>
   </div>
 </section>
 
@@ -1432,6 +1382,19 @@ function renderFactions(){
  document.getElementById('factionVerdict').textContent=ties.length>1?`${ties.join(' & ')} are tied atop the faction board with ${lead} category wins.`:`${ord[0]} leads the faction battle — winning ${lead} of ${rows.length} categories through Week 6.`;
 }
 
+
+const BTB_SUPABASE_URL='https://jrrsfvrystagxxuuayjt.supabase.co';
+const BTB_SUPABASE_KEY='sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7';
+const btbSupabase=window.supabase.createClient(BTB_SUPABASE_URL,BTB_SUPABASE_KEY);
+
+const SWEAT_FACTION={
+  "Pete":["SHOW","show"],"Tony Squares":["SHOW","show"],"Lou":["SHOW","show"],
+  "Nez":["F&F","ff"],"Davis":["F&F","ff"],"Kitchen":["F&F","ff"],"Zakarian":["F&F","ff"],"Cooterdoodle":["F&F","ff"],
+  "Rambis":["SYTYCT","sytyct"],"Goofy":["SYTYCT","sytyct"],"Zak":["SYTYCT","sytyct"],"ChadCandles":["SYTYCT","sytyct"],"Cupps":["SYTYCT","sytyct"],
+  "Steph":["CHAMPS","champs"],"Blizzy":["CHAMPS","champs"],
+  "Contestant 16":["YT","yt"],"Contestant 17":["YT","yt"],"Contestant 18":["YT","yt"]
+};
+
 function setDashboardMode(mode){
   const live=mode==='live';
   const panel=document.getElementById('finalSweatPanel');
@@ -1442,14 +1405,128 @@ function setDashboardMode(mode){
   liveBtn.classList.toggle('active',live);
   document.getElementById('completedContext').style.marginTop=live?'8px':'10px';
 }
+
 document.getElementById('modeCompleted').addEventListener('click',()=>setDashboardMode('completed'));
 document.getElementById('modeLive').addEventListener('click',()=>setDashboardMode('live'));
 
-document.querySelectorAll('[data-sweat-img]').forEach(img=>{
-  const name=img.getAttribute('data-sweat-img');
-  if(REPLAY_HEADSHOTS[name]) img.src=REPLAY_HEADSHOTS[name];
-});
-setDashboardMode('completed');
+function escHtml(v=''){
+  return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+function fmtScore(v){ return Number(v||0).toFixed(2).replace(/\.00$/,''); }
+
+async function loadLiveFinalSweat(){
+  const {data:state,error:stateErr}=await btbSupabase.from('league_state').select('*').eq('id',1).single();
+  if(stateErr){
+    document.getElementById('sweatGrid').innerHTML=`<div class="sweat-error">Live data unavailable: ${escHtml(stateErr.message)}</div>`;
+    return;
+  }
+
+  const liveBtn=document.getElementById('modeLive');
+  const completedThrough=Math.max(0,Number(state.current_week)-1);
+  document.querySelector('#completedContext b').textContent=`Through Week ${completedThrough}`;
+  document.querySelector('#completedContext em').textContent=`Final Sweat data does not affect season metrics until the commissioner finalizes Week ${state.current_week}.`;
+
+  if(state.week_status!=='LIVE'){
+    liveBtn.style.display='none';
+    setDashboardMode('completed');
+    return;
+  }
+
+  liveBtn.style.display='';
+  liveBtn.innerHTML=`🔴 Final Sweat · Week ${state.current_week}`;
+  document.getElementById('sweatKicker').textContent=`🔴 WEEK ${state.current_week} LIVE · FINAL SWEAT`;
+  setDashboardMode('live');
+
+  const {data:rawScores,error:scoresErr}=await btbSupabase
+    .from('weekly_scores')
+    .select('*')
+    .eq('week',state.current_week)
+    .order('current_score',{ascending:false});
+
+  if(scoresErr){
+    document.getElementById('sweatGrid').innerHTML=`<div class="sweat-error">Live scores unavailable: ${escHtml(scoresErr.message)}</div>`;
+    return;
+  }
+
+  // Ignore untouched blank POC rows. In production, the commissioner will enter every surviving team.
+  const entered=(rawScores||[]).filter(r =>
+    Number(r.current_score)>0 ||
+    Number(r.starters_remaining)>0 ||
+    (r.remaining_players && String(r.remaining_players).trim())
+  );
+
+  if(!entered.length){
+    document.getElementById('sweatGrid').innerHTML='<div class="sweat-error">Week is LIVE, but no live scores have been entered yet.</div>';
+    document.getElementById('sweatIntro').textContent='Waiting for the commissioner’s Monday live-data load.';
+    return;
+  }
+
+  const ranked=[...entered].sort((a,b)=>Number(b.current_score)-Number(a.current_score));
+  ranked.forEach((r,i)=>r._rank=i+1);
+
+  const currentBlade=Math.min(...entered.map(r=>Number(r.current_score)));
+  const finished=entered.filter(r=>Number(r.starters_remaining)===0 && !r.excluded_from_sweat);
+  const guaranteedFloor=finished.length ? Math.min(...finished.map(r=>Number(r.current_score))) : null;
+
+  // A team is mathematically safe if at least one finished team is permanently below it.
+  // Commissioner "Exclude from Sweat" can also force-remove a known-safe team.
+  let sweat=entered.filter(r=>{
+    if(r.excluded_from_sweat) return false;
+    if(guaranteedFloor===null) return true;
+    return Number(r.current_score) <= guaranteedFloor;
+  });
+
+  sweat.sort((a,b)=>Number(b.current_score)-Number(a.current_score));
+  const safeCount=entered.length-sweat.length;
+
+  document.getElementById('sweatChopLine').textContent=fmtScore(currentBlade);
+  document.getElementById('sweatSafeCount').textContent=
+    safeCount>0 ? `${safeCount} mathematically safe · ${sweat.length} still sweating`
+                : `${sweat.length} teams still unresolved`;
+  document.getElementById('sweatIntro').textContent=
+    `${sweat.length} ${sweat.length===1?'team is':'teams are'} still mathematically exposed to the blade. Current-week data is partial; completed analytics below remain locked through Week ${completedThrough}.`;
+
+  const showNames = state.show_remaining_players !== false;
+  const bounty = 50*(17-Number(state.current_week));
+
+  document.getElementById('sweatGrid').innerHTML=sweat.map(r=>{
+    const fac=SWEAT_FACTION[r.owner_name]||['—',''];
+    const score=Number(r.current_score);
+    const margin=score-currentBlade;
+    const onBlade=Math.abs(margin)<0.005;
+    const bountyTarget=(r.owner_name==='Pete'||r.owner_name==='Tony Squares');
+    const names=(showNames && r.remaining_players)
+      ? `<span class="sweat-player-list">${escHtml(r.remaining_players)}</span>` : '';
+    const remaining=Number(r.starters_remaining);
+    return `<article class="sweat-team ${onBlade?'blade':''}">
+      <div class="sweat-rank">${r._rank}</div>
+      <img src="${REPLAY_HEADSHOTS[r.owner_name]||''}" alt="${escHtml(r.owner_name)}">
+      <div class="sweat-main">
+        <div class="sweat-name">${escHtml(r.owner_name)}
+          <span class="sweat-faction ${fac[1]}">(${fac[0]})</span>
+          ${bountyTarget?'<span class="target-mini">🎯 BOUNTY</span>':''}
+        </div>
+        <div class="sweat-score">${fmtScore(score)} pts
+          <span>${onBlade?'ON THE BLADE':`+${fmtScore(margin)} above blade`}</span>
+        </div>
+        <div class="sweat-context">
+          Current live rank: <b>#${r._rank} / ${entered.length}</b>
+          ${bountyTarget?` · bounty chop would add <b>$${bounty}</b>`:''}
+        </div>
+      </div>
+      <div class="sweat-left"><b>${remaining}</b><span>${remaining===1?'starter':'starters'} left${names}</span></div>
+    </article>`;
+  }).join('');
+
+  const bladeOwner=[...entered].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
+  const bountyOnBlade=(bladeOwner.owner_name==='Pete'||bladeOwner.owner_name==='Tony Squares');
+  let story=`<b>Show talking point:</b> ${escHtml(bladeOwner.owner_name)} currently sits on the blade at <b>${fmtScore(bladeOwner.current_score)}</b>.`;
+  if(bountyOnBlade) story+=` A chop tonight would add <b>$${bounty}</b> to the prize pool.`;
+  if(safeCount>0) story+=` Meanwhile, <b>${safeCount}</b> ${safeCount===1?'team is':'teams are'} already mathematically safe.`;
+  document.getElementById('sweatStory').innerHTML=story;
+}
+
+loadLiveFinalSweat();
 
 renderBountyEconomy();
 renderFactions();
