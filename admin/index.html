@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Below the Blade — Commissioner POC</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0d1a24;--panel:#152631;--line:#3e5360;--text:#f6f2ea;--muted:#9fb0bb;--gold:#f2c14e;--green:#5fc58d;--red:#ef6a5f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 18px 60px}.eyebrow{color:var(--gold);font-weight:900;letter-spacing:.12em;font-size:11px}
+h1{margin:5px 0 4px;font-size:34px}.sub{color:var(--muted);margin-bottom:22px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}label{display:block;font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.06em;margin-bottom:5px}
+input,select{width:100%;background:#0f202b;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 11px;font:inherit}
+.field{flex:1;min-width:180px}.field.small{max-width:150px}
+button{border:1px solid var(--line);background:#203746;color:var(--text);padding:10px 14px;border-radius:9px;font-weight:850;cursor:pointer}
+button.primary{background:var(--gold);color:#17212a;border-color:var(--gold)}button.green{background:var(--green);color:#102018;border-color:var(--green)}button.red{background:#862f2a;border-color:#ad4942}
+.status{font-size:12px;margin-top:9px;color:var(--muted)}.status.ok{color:var(--green)}.status.bad{color:var(--red)}.topline{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;padding:5px 8px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:900}.pill.live{color:#fff;background:#8f2925;border-color:#c8554c}.pill.final{color:#1b2b20;background:var(--green);border-color:var(--green)}
+.hidden{display:none!important}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px 7px;border-bottom:1px solid #324652;text-align:left}
+th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}td input{padding:8px 9px}td.owner{font-weight:850;white-space:nowrap}td.check{text-align:center}td.check input{width:auto;transform:scale(1.1)}
+.note{padding:10px 12px;background:#1e2b24;border:1px solid #59633e;border-radius:9px;color:#d9d6a4;font-size:11px;line-height:1.45}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.smallprint{font-size:10px;color:var(--muted);line-height:1.45}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">PRIVATE PROOF OF CONCEPT</div>
+  <h1>Below the Blade — Commissioner</h1>
+  <div class="sub">This page proves the real data loop. It is not part of the public pitch UI.</div>
+
+  <section class="card">
+    <b>1. Supabase connection</b>
+    <div class="smallprint">Use the project URL plus the publishable/anon key. Never use a service-role or secret key in a browser.</div>
+    <div class="row" style="margin-top:12px">
+      <div class="field"><label>PROJECT URL</label><input id="projectUrl" value="https://jrrsfvrystagxxuuayjt.supabase.co"></div>
+      <div class="field"><label>PUBLISHABLE / ANON KEY</label><input id="anonKey" value="sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7" placeholder="Paste Supabase publishable key"></div>
+      <button class="primary" id="saveConfig">Save connection</button>
+    </div>
+    <div class="status" id="configStatus">Not connected yet.</div>
+  </section>
+
+  <section class="card">
+    <b>2. Commissioner login</b>
+    <div class="row" style="margin-top:12px">
+      <div class="field"><label>EMAIL</label><input id="email" type="email" value="bron0623@gmail.com"></div>
+      <div class="field"><label>PASSWORD</label><input id="password" type="password" placeholder="Commissioner password"></div>
+      <button class="green" id="loginBtn">Log in</button>
+      <button id="logoutBtn" class="hidden">Log out</button>
+    </div>
+    <div class="status" id="authStatus">Logged out.</div>
+  </section>
+
+  <section class="card hidden" id="adminCard">
+    <div class="topline">
+      <div><b>3. Live-week data</b><div class="smallprint">For the POC, these are the 13 owners alive entering Week 6.</div></div>
+      <div id="statePill" class="pill">LOADING</div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div class="field small"><label>CURRENT WEEK</label><input id="weekNumber" type="number" min="1" max="17" value="6"></div>
+      <div class="field small"><label>WEEK STATUS</label><select id="weekStatus"><option value="LIVE">LIVE</option><option value="COMPLETED">COMPLETED</option></select></div>
+      <div class="field small"><label>SHOW PLAYER NAMES</label><select id="showPlayers"><option value="true">YES</option><option value="false">NO</option></select></div>
+      <button id="loadBtn">Load saved data</button>
+    </div>
+
+    <div class="note" style="margin-top:12px"><b>Override:</b> “Exclude from Sweat” lets you omit an owner you know is mathematically safe without deleting their score.</div>
+
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Owner</th><th>Current Score</th><th>Starters Left</th><th>Exclude</th><th>Remaining Players / Note</th></tr></thead>
+        <tbody id="scoreRows"></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="green" id="saveLiveBtn">Save as LIVE Week</button>
+      <button class="primary" id="saveOnlyBtn">Save Scores Only</button>
+      <button class="red" id="finalizeBtn">Finalize Week</button>
+    </div>
+    <div class="status" id="saveStatus"></div>
+  </section>
+</div>
+
+<script>
+const OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Blizzy","Goofy","ChadCandles","Davis","Lou","Contestant 16","Contestant 17"];
+let sb=null;
+const $=id=>document.getElementById(id);
+
+function setStatus(id,msg,ok=null){const el=$(id);el.textContent=msg;el.classList.remove('ok','bad');if(ok===true)el.classList.add('ok');if(ok===false)el.classList.add('bad')}
+function renderRows(data=[]){
+  const map=Object.fromEntries(data.map(r=>[r.owner_name,r]));
+  $('scoreRows').innerHTML=OWNERS.map(name=>{
+    const r=map[name]||{};
+    return `<tr data-owner="${name}">
+      <td class="owner">${name}</td>
+      <td><input class="score" type="number" step="0.01" value="${r.current_score ?? ''}" placeholder="0.00"></td>
+      <td><input class="left" type="number" min="0" max="9" value="${r.starters_remaining ?? 0}"></td>
+      <td class="check"><input class="exclude" type="checkbox" ${r.excluded_from_sweat?'checked':''}></td>
+      <td><input class="players" value="${r.remaining_players ?? ''}" placeholder="e.g. Lamar Jackson"></td>
+    </tr>`;
+  }).join('');
+}
+function applyState(state){
+  if(!state)return;
+  $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);
+  const p=$('statePill');p.textContent=`WEEK ${state.current_week} · ${state.week_status}`;p.className='pill '+(state.week_status==='LIVE'?'live':'final');
+}
+async function initClient(){
+  const url=$('projectUrl').value.trim(),key=$('anonKey').value.trim();
+  if(!url||!key)return setStatus('configStatus','Project URL and publishable key are required.',false);
+  localStorage.setItem('btb_url',url);localStorage.setItem('btb_key',key);
+  sb=supabase.createClient(url,key);setStatus('configStatus','Connection saved. Ready to log in.',true);
+  const {data:{session}}=await sb.auth.getSession();if(session)onLoggedIn(session.user);
+}
+async function onLoggedIn(user){
+  $('adminCard').classList.remove('hidden');$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');
+  setStatus('authStatus',`Logged in as ${user.email}`,true);await loadStateAndScores();
+}
+async function loadStateAndScores(){
+  if(!sb)return;setStatus('saveStatus','Loading...');
+  const {data:state,error:e1}=await sb.from('league_state').select('*').eq('id',1).single();
+  if(e1)return setStatus('saveStatus','Could not read league_state: '+e1.message,false);
+  applyState(state);
+  const week=Number(state.current_week);
+  const {data:scores,error:e2}=await sb.from('weekly_scores').select('*').eq('week',week).order('owner_name');
+  if(e2)return setStatus('saveStatus','Could not read weekly_scores: '+e2.message,false);
+  renderRows(scores||[]);setStatus('saveStatus',`Loaded Week ${week}. ${scores?.length||0} saved score rows found.`,true);
+}
+function collectRows(){
+  const week=Number($('weekNumber').value);
+  return [...document.querySelectorAll('#scoreRows tr')].map(tr=>({
+    week,owner_name:tr.dataset.owner,current_score:Number(tr.querySelector('.score').value||0),
+    starters_remaining:Number(tr.querySelector('.left').value||0),remaining_players:tr.querySelector('.players').value.trim()||null,
+    excluded_from_sweat:tr.querySelector('.exclude').checked,updated_at:new Date().toISOString()
+  }));
+}
+async function saveScores(){const {error}=await sb.from('weekly_scores').upsert(collectRows(),{onConflict:'week,owner_name'});if(error)throw error}
+async function saveState(status){
+  const week=Number($('weekNumber').value);
+  const {error}=await sb.from('league_state').update({current_week:week,week_status:status,show_remaining_players:$('showPlayers').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
+  if(error)throw error;applyState({current_week:week,week_status:status});
+}
+$('saveConfig').addEventListener('click',initClient);
+$('loginBtn').addEventListener('click',async()=>{
+  if(!sb)await initClient();if(!sb)return;setStatus('authStatus','Logging in...');
+  const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  if(error)return setStatus('authStatus',error.message,false);onLoggedIn(data.user);
+});
+$('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();$('adminCard').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');setStatus('authStatus','Logged out.')});
+$('loadBtn').addEventListener('click',loadStateAndScores);
+$('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
+$('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
+$('finalizeBtn').addEventListener('click',async()=>{const week=Number($('weekNumber').value);if(!confirm(`Finalize Week ${week}?`))return;try{setStatus('saveStatus','Finalizing...');await saveScores();await saveState('COMPLETED');setStatus('saveStatus',`Week ${week} finalized.`,true)}catch(e){setStatus('saveStatus',e.message,false)}});
+$('projectUrl').value=localStorage.getItem('btb_url')||$('projectUrl').value;$('anonKey').value=localStorage.getItem('btb_key')||'';renderRows();if($('anonKey').value)initClient();
+</script>
+</body>
+</html>
