@@ -1297,7 +1297,7 @@ document.getElementById('replayStartWeek').addEventListener('change',e=>{
 });
 document.getElementById('replayPlay').addEventListener('click',async()=>{
   const start=replayWeek;
-  for(let w=start;w<=6;w++){
+  for(let w=start;w<=Math.max(...Object.keys(REPLAY_CHOPPED).map(Number),6);w++){
     replayWeek=w;
     document.getElementById('replayStartWeek').value=String(replayWeek);
     await animateReplayWeek();
@@ -1305,11 +1305,11 @@ document.getElementById('replayPlay').addEventListener('click',async()=>{
 });
 document.getElementById('replayPause').addEventListener('click',()=>{replayPaused=!replayPaused;document.getElementById('replayPause').textContent=replayPaused?'▶ Resume':'⏸ Pause';});
 document.getElementById('replayPrev').addEventListener('click',()=>{replayWeek=Math.max(1,replayWeek-1);document.getElementById('replayStartWeek').value=String(replayWeek);animateReplayWeek();});
-document.getElementById('replayNext').addEventListener('click',()=>{replayWeek=Math.min(6,replayWeek+1);document.getElementById('replayStartWeek').value=String(replayWeek);animateReplayWeek();});
+document.getElementById('replayNext').addEventListener('click',()=>{replayWeek=Math.min(Math.max(...Object.keys(REPLAY_CHOPPED).map(Number),6),replayWeek+1);document.getElementById('replayStartWeek').value=String(replayWeek);animateReplayWeek();});
 
 const PRIZE_BASE=2000;
-const CURRENT_WEEK=6; // Dashboard is entering Week 6 after five completed chops.
-const CURRENT_SURVIVORS=13;
+let CURRENT_WEEK=6; // Updated from Supabase when a week is finalized.
+let CURRENT_SURVIVORS=13;
 
 function currency(v){return '$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
 function currency0(v){return '$'+Math.round(v).toLocaleString();}
@@ -1323,52 +1323,83 @@ function bountySafetyMargin(name,week){
   return (+d[name])-cutLine;
 }
 
+function completedBountyTotal(){
+  let total=0;
+  Object.entries(REPLAY_CHOPPED).forEach(([w,n])=>{
+    if(n==='Pete'||n==='Tony Squares') total+=bountyAmountForWeek(+w);
+  });
+  return total;
+}
+
 function renderBountyEconomy(){
   const targets=['Pete','Tony Squares'];
-  const currentBounty=bountyAmountForWeek(CURRENT_WEEK);
+  const choppedTargets=new Set(Object.values(REPLAY_CHOPPED).filter(n=>targets.includes(n)));
+  const activeTargets=targets.filter(n=>!choppedTargets.has(n));
+  const guaranteedPot=PRIZE_BASE+completedBountyTotal();
+  const nextWeek=CURRENT_WEEK;
+  const currentBounty=bountyAmountForWeek(nextWeek);
 
   document.getElementById('bountyWatchCards').innerHTML=targets.map(name=>{
-    const score=+(REPLAY_WEEKLY[CURRENT_WEEK]?.[name]||0);
-    const margin=bountySafetyMargin(name,CURRENT_WEEK);
+    const cw=replayChopWeek(name);
+    if(cw){
+      const added=bountyAmountForWeek(cw);
+      return `<div class="bounty-card chopped-target">
+        <div class="target-wrap"><div class="target-ring"><img src="${REPLAY_HEADSHOTS[name]||''}" alt="${name}"></div></div>
+        <div>
+          <div class="bounty-name">${name}</div>
+          <div class="bounty-stat"><span>Status</span><b>CHOPPED · W${cw}</b></div>
+          <div class="bounty-stat"><span>Added to pot</span><b>${currency0(added)}</b></div>
+          <div class="bounty-value">🎯 BOUNTY CLAIMED</div>
+        </div>
+      </div>`;
+    }
+    const score=+(REPLAY_WEEKLY[nextWeek]?.[name]||0);
+    const margin=score?bountySafetyMargin(name,nextWeek):null;
     return `<div class="bounty-card">
       <div class="target-wrap"><div class="target-ring"><img src="${REPLAY_HEADSHOTS[name]||''}" alt="${name}"></div></div>
       <div>
         <div class="bounty-name">${name}</div>
-        <div class="bounty-stat"><span>Week ${CURRENT_WEEK} score</span><b>${score.toFixed(1)}</b></div>
-        <div class="bounty-stat"><span>Above chop line</span><b>+${margin.toFixed(1)}</b></div>
-        <div class="bounty-value">🎯 ${currency0(currentBounty)} bounty if chopped now</div>
+        <div class="bounty-stat"><span>Week ${nextWeek} score</span><b>${score?score.toFixed(1):'—'}</b></div>
+        <div class="bounty-stat"><span>Above chop line</span><b>${margin===null?'—':`+${margin.toFixed(1)}`}</b></div>
+        <div class="bounty-value">🎯 ${currency0(currentBounty)} bounty if chopped this week</div>
       </div>
     </div>`;
   }).join('');
 
-  const secondBounty=bountyAmountForWeek(CURRENT_WEEK+1);
+  // Only still-active targets contribute to the maximum remaining bounty pool.
+  let remainingBounty=0;
+  activeTargets.forEach((_,i)=>remainingBounty+=bountyAmountForWeek(nextWeek+i));
   document.getElementById('bountyWatchFoot').textContent=
-    `Current maximum remaining bounty pool: ${currency0(currentBounty+secondBounty)} — only one target can fall per week.`;
+    activeTargets.length
+      ? `Maximum remaining bounty pool: ${currency0(remainingBounty)} across ${activeTargets.length} remaining target${activeTargets.length===1?'':'s'}.`
+      : `Both bounties have been claimed.`;
 
-  const currentEquity=PRIZE_BASE/CURRENT_SURVIVORS;
-  const priorEquity=PRIZE_BASE/(CURRENT_SURVIVORS+1);
-  const normalEquity=PRIZE_BASE/(CURRENT_SURVIVORS-1);
-  const bountyEquity=(PRIZE_BASE+currentBounty)/(CURRENT_SURVIVORS-1);
-  const maxPot=PRIZE_BASE+currentBounty+secondBounty;
+  const currentEquity=guaranteedPot/CURRENT_SURVIVORS;
+  const priorSurvivors=CURRENT_SURVIVORS+1;
+  const priorGuaranteed=guaranteedPot-(REPLAY_CHOPPED[String(nextWeek-1)] && targets.includes(REPLAY_CHOPPED[String(nextWeek-1)]) ? bountyAmountForWeek(nextWeek-1) : 0);
+  const priorEquity=priorGuaranteed/priorSurvivors;
+  const normalEquity=guaranteedPot/(CURRENT_SURVIVORS-1);
+  const bountyEquity=(guaranteedPot+(activeTargets.length?currentBounty:0))/(CURRENT_SURVIVORS-1);
+  const maxPot=guaranteedPot+remainingBounty;
 
   document.getElementById('equityCurrent').textContent=currency(currentEquity);
-  document.getElementById('equityFormula').textContent=`${currency0(PRIZE_BASE)} guaranteed ÷ ${CURRENT_SURVIVORS} survivors`;
+  document.getElementById('equityFormula').textContent=`${currency0(guaranteedPot)} guaranteed ÷ ${CURRENT_SURVIVORS} survivors`;
   document.getElementById('equityGained').textContent='+'+currency(currentEquity-priorEquity).replace('$','');
-  document.getElementById('guaranteedPot').textContent=currency0(PRIZE_BASE);
+  document.getElementById('guaranteedPot').textContent=currency0(guaranteedPot);
   document.getElementById('maxPot').textContent=currency0(maxPot);
-  document.getElementById('maxPotDetail').textContent=`${currency0(PRIZE_BASE)} locked + ${currency0(maxPot-PRIZE_BASE)} still hunting`;
+  document.getElementById('maxPotDetail').textContent=`${currency0(guaranteedPot)} locked + ${currency0(remainingBounty)} still hunting`;
   document.getElementById('nextNormal').textContent=currency(normalEquity);
   document.getElementById('nextNormalGain').textContent='+'+currency(normalEquity-currentEquity).replace('$','');
-  document.getElementById('nextBounty').textContent=currency(bountyEquity);
-  document.getElementById('nextBountyGain').textContent='+'+currency(bountyEquity-currentEquity).replace('$','');
+  document.getElementById('nextBounty').textContent=activeTargets.length?currency(bountyEquity):'—';
+  document.getElementById('nextBountyGain').textContent=activeTargets.length?'+'+currency(bountyEquity-currentEquity).replace('$',''):'—';
 }
 
 const FACTION_GROUPS={"SHOW TEAM": ["Pete", "Tony Squares", "Lou"], "F&F": ["Nez", "Davis", "Kitchen", "Zakarian", "Cooterdoodle"], "SYTYCT": ["Rambis", "Goofy", "Zak", "ChadCandles", "Cupps"], "FORMER CHAMPS": ["Steph", "Blizzy"], "YOUTUBE WILDCARDS": ["Contestant 16", "Contestant 17", "Contestant 18"]};
 function renderFactions(){
- const through=6,chop={};Object.entries(REPLAY_CHOPPED).forEach(([w,n])=>chop[n]=+w);const M={};
+ const through=Math.max(...Object.keys(REPLAY_CHOPPED).map(Number),0),chop={};Object.entries(REPLAY_CHOPPED).forEach(([w,n])=>chop[n]=+w);const M={};
  Object.entries(FACTION_GROUPS).forEach(([g,members])=>{let pts=0,ow=0,b3=0,wins=0,ranks=[],chops=0;members.forEach(n=>{if(chop[n]&&chop[n]<=through)chops++});
  for(let w=1;w<=through;w++){const d=REPLAY_WEEKLY[w]||{},field=Object.keys(d),ranked=[...field].sort((a,b)=>d[b]-d[a]),bottom=new Set(ranked.slice(-3));members.forEach(n=>{if(d[n]!==undefined){pts+=+d[n];ow++;let r=ranked.indexOf(n)+1;ranks.push(r);if(r===1)wins++;if(bottom.has(n))b3++;}})}
- const alive=members.filter(n=>!(chop[n]&&chop[n]<=through)).length,fieldNow=Object.keys(REPLAY_WEEKLY[6]||{}).length;
+ const alive=members.filter(n=>!(chop[n]&&chop[n]<=through)).length,fieldNow=Object.keys(REPLAY_WEEKLY[through]||{}).length;
  const aliveMembers=members.filter(n=>!(chop[n]&&chop[n]<=through));
  const avgFab=aliveMembers.length?aliveMembers.reduce((s,n)=>s+(REPLAY_FAB_REMAINING[n]||0),0)/aliveMembers.length:0;
  M[g]={members,alive,start:members.length,avg:pts/ow,avgRank:ranks.reduce((a,b)=>a+b,0)/ranks.length,b3,wins,chops,delta:alive-fieldNow*(members.length/18),avgFab};});
@@ -1379,7 +1410,7 @@ function renderFactions(){
  const wc=Object.fromEntries(gs.map(g=>[g,0]));
  document.getElementById('factionBody').innerHTML=rows.map(r=>{const vals=gs.map(g=>r[2](M[g])),target=r[4]?Math.max(...vals):Math.min(...vals);return `<tr><td>${r[0]}<span class="metric-note">${r[1]}</span></td>`+gs.map((g,i)=>{const win=Math.abs(vals[i]-target)<.0001;if(win)wc[g]++;const bad=(r[0]=='Chops'||r[0]=='Bottom-3 Finishes')&&vals[i]===Math.max(...vals)&&!win;return `<td class="${win?'win':''} ${bad?'bad':''}">${win?'✓ ':''}${r[3](M[g])}</td>`}).join('')+'</tr>'}).join('');
  const ord=[...gs].sort((a,b)=>wc[b]-wc[a]),lead=wc[ord[0]],ties=ord.filter(g=>wc[g]===lead);
- document.getElementById('factionVerdict').textContent=ties.length>1?`${ties.join(' & ')} are tied atop the faction board with ${lead} category wins.`:`${ord[0]} leads the faction battle — winning ${lead} of ${rows.length} categories through Week 6.`;
+ document.getElementById('factionVerdict').textContent=ties.length>1?`${ties.join(' & ')} are tied atop the faction board with ${lead} category wins.`:`${ord[0]} leads the faction battle — winning ${lead} of ${rows.length} categories through Week ${through}.`; const fw=document.querySelector('.faction-week strong'); if(fw) fw.textContent=`WEEK ${through}`;
 }
 
 
@@ -1414,6 +1445,72 @@ function escHtml(v=''){
 }
 function fmtScore(v){ return Number(v||0).toFixed(2).replace(/\.00$/,''); }
 
+
+function refreshEliminationVisuals(){
+  const choppedByName={};
+  Object.entries(REPLAY_CHOPPED).forEach(([w,n])=>choppedByName[n]=+w);
+
+  document.querySelectorAll('.owner').forEach(card=>{
+    const name=card.querySelector('.owner-name')?.textContent.trim();
+    if(!name) return;
+    const w=choppedByName[name];
+    if(w){
+      card.classList.add('chopped');
+      const tag=card.querySelector('.tag');
+      if(tag) tag.textContent=`CHOPPED · W${w}`;
+      const mini=card.querySelector('.mini');
+      if(mini && REPLAY_WEEKLY[w]?.[name]!==undefined) mini.innerHTML=`<b>${(+REPLAY_WEEKLY[w][name]).toFixed(1)}</b> final pts · chopped W${w}`;
+    }
+  });
+
+  document.querySelectorAll('.faction-roster-pod .roster-owner').forEach(el=>{
+    const name=el.textContent.trim();
+    el.classList.toggle('eliminated',Boolean(choppedByName[name]));
+  });
+}
+
+function addReplayWeekOption(week){
+  const sel=document.getElementById('replayStartWeek');
+  if(!sel) return;
+  if(![...sel.options].some(o=>+o.value===week)){
+    const o=document.createElement('option');o.value=String(week);o.textContent=`Week ${week}`;sel.appendChild(o);
+  }
+}
+
+function updateCompletedLabels(week,chopped,score){
+  document.querySelector('#completedContext b').textContent=`Through Week ${week}`;
+  document.querySelector('#completedContext em').textContent=`Week ${week} is finalized. ${chopped} was chopped at ${(+score).toFixed(2)} points.`;
+
+  document.querySelectorAll('.notice').forEach(n=>{
+    if(n.textContent.includes('PITCH MOCKUP')) n.innerHTML=`<b>WORKING PROTOTYPE · THROUGH WEEK ${week}</b> — Final Sweat is powered by Supabase. Historical FAB/storyline modules still contain seeded demonstration data until their imports are wired.`;
+  });
+}
+
+function applyCompletedWeek(state,rawScores){
+  const week=Number(state.current_week);
+  const rows=(rawScores||[]).filter(r=>Number(r.current_score)>0);
+  if(!rows.length) return;
+
+  const scores={};
+  rows.forEach(r=>scores[r.owner_name]=Number(r.current_score));
+  REPLAY_WEEKLY[String(week)]=scores;
+
+  const chopped=[...rows].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
+  REPLAY_CHOPPED[String(week)]=chopped.owner_name;
+
+  CURRENT_WEEK=Math.min(17,week+1);
+  CURRENT_SURVIVORS=Math.max(1,18-Object.keys(REPLAY_CHOPPED).length);
+
+  updateCompletedLabels(week,chopped.owner_name,chopped.current_score);
+  refreshEliminationVisuals();
+  addReplayWeekOption(week);
+
+  replayWeek=week;
+  renderReplayBase();
+  renderFactions();
+  renderBountyEconomy();
+}
+
 async function loadLiveFinalSweat(){
   const {data:state,error:stateErr}=await btbSupabase.from('league_state').select('*').eq('id',1).single();
   if(stateErr){
@@ -1426,17 +1523,6 @@ async function loadLiveFinalSweat(){
   document.querySelector('#completedContext b').textContent=`Through Week ${completedThrough}`;
   document.querySelector('#completedContext em').textContent=`Final Sweat data does not affect season metrics until the commissioner finalizes Week ${state.current_week}.`;
 
-  if(state.week_status!=='LIVE'){
-    liveBtn.style.display='none';
-    setDashboardMode('completed');
-    return;
-  }
-
-  liveBtn.style.display='';
-  liveBtn.innerHTML=`🔴 Final Sweat · Week ${state.current_week}`;
-  document.getElementById('sweatKicker').textContent=`🔴 WEEK ${state.current_week} LIVE · FINAL SWEAT`;
-  setDashboardMode('live');
-
   const {data:rawScores,error:scoresErr}=await btbSupabase
     .from('weekly_scores')
     .select('*')
@@ -1447,6 +1533,18 @@ async function loadLiveFinalSweat(){
     document.getElementById('sweatGrid').innerHTML=`<div class="sweat-error">Live scores unavailable: ${escHtml(scoresErr.message)}</div>`;
     return;
   }
+
+  if(state.week_status!=='LIVE'){
+    liveBtn.style.display='none';
+    setDashboardMode('completed');
+    applyCompletedWeek(state,rawScores);
+    return;
+  }
+
+  liveBtn.style.display='';
+  liveBtn.innerHTML=`🔴 Final Sweat · Week ${state.current_week}`;
+  document.getElementById('sweatKicker').textContent=`🔴 WEEK ${state.current_week} LIVE · FINAL SWEAT`;
+  setDashboardMode('live');
 
   // Ignore untouched blank POC rows. In production, the commissioner will enter every surviving team.
   const entered=(rawScores||[]).filter(r =>

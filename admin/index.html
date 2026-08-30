@@ -25,9 +25,9 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow">PRIVATE PROOF OF CONCEPT</div>
+  <div class="eyebrow">COMMISSIONER CONTROL ROOM</div>
   <h1>Below the Blade — Commissioner</h1>
-  <div class="sub">This page proves the real data loop. It is not part of the public pitch UI.</div>
+  <div class="sub">Enter live scores, control Final Sweat, and finalize completed weeks.</div>
 
   <section class="card">
     <b>Commissioner login</b>
@@ -42,7 +42,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 
   <section class="card hidden" id="adminCard">
     <div class="topline">
-      <div><b>Live-week data</b><div class="smallprint">For the POC, these are the 13 owners alive entering Week 6.</div></div>
+      <div><b>Live-week data</b><div class="smallprint">Enter current/final scores for the surviving field.</div></div>
       <div id="statePill" class="pill">LOADING</div>
     </div>
 
@@ -139,7 +139,24 @@ $('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();
 $('loadBtn').addEventListener('click',loadStateAndScores);
 $('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
-$('finalizeBtn').addEventListener('click',async()=>{const week=Number($('weekNumber').value);if(!confirm(`Finalize Week ${week}?`))return;try{setStatus('saveStatus','Finalizing...');await saveScores();await saveState('COMPLETED');setStatus('saveStatus',`Week ${week} finalized.`,true)}catch(e){setStatus('saveStatus',e.message,false)}});
+$('finalizeBtn').addEventListener('click',async()=>{
+  const week=Number($('weekNumber').value);
+  const rows=collectRows().filter(r=>Number(r.current_score)>0);
+  if(!rows.length) return setStatus('saveStatus','Enter final scores before finalizing.',false);
+  const chopped=[...rows].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
+  const msg=`Finalize Week ${week}?\n\n${chopped.owner_name} will be recorded as the chopped owner at ${Number(chopped.current_score).toFixed(2)} points.\n\nMake sure these are FINAL scores.`;
+  if(!confirm(msg)) return;
+  try{
+    setStatus('saveStatus','Finalizing...');
+    document.querySelectorAll('#scoreRows tr').forEach(tr=>{
+      tr.querySelector('.left').value=0;
+      tr.querySelector('.players').value='';
+    });
+    await saveScores();
+    await saveState('COMPLETED');
+    setStatus('saveStatus',`Week ${week} finalized · ${chopped.owner_name} chopped at ${Number(chopped.current_score).toFixed(2)}.`,true);
+  }catch(e){setStatus('saveStatus',e.message,false)}
+});
 renderRows();initClient();
 </script>
 </body>
