@@ -12,8 +12,8 @@
 .wrap{max-width:1080px;margin:0 auto;padding:28px 18px 60px}.eyebrow{color:var(--gold);font-weight:900;letter-spacing:.12em;font-size:11px}
 h1{margin:5px 0 4px;font-size:34px}.sub{color:var(--muted);margin-bottom:22px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}label{display:block;font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.06em;margin-bottom:5px}
-input,select{width:100%;background:#0f202b;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 11px;font:inherit}
-.field{flex:1;min-width:180px}.field.small{max-width:150px}
+input,select,textarea{width:100%;background:#0f202b;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 11px;font:inherit}
+textarea{min-height:210px;resize:vertical}.field{flex:1;min-width:180px}.field.small{max-width:150px}
 button{border:1px solid var(--line);background:#203746;color:var(--text);padding:10px 14px;border-radius:9px;font-weight:850;cursor:pointer}
 button.primary{background:var(--gold);color:#17212a;border-color:var(--gold)}button.green{background:var(--green);color:#102018;border-color:var(--green)}button.red{background:#862f2a;border-color:#ad4942}
 .status{font-size:12px;margin-top:9px;color:var(--muted)}.status.ok{color:var(--green)}.status.bad{color:var(--red)}.topline{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
@@ -50,6 +50,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
       <div class="field small"><label>CURRENT WEEK</label><input id="weekNumber" type="number" min="1" max="17" value="6"></div>
       <div class="field small"><label>WEEK STATUS</label><select id="weekStatus"><option value="LIVE">LIVE</option><option value="COMPLETED">COMPLETED</option></select></div>
       <div class="field small"><label>SHOW PLAYER NAMES</label><select id="showPlayers"><option value="true">YES</option><option value="false">NO</option></select></div>
+      <div class="field small"><label>FAB EFFICIENCY</label><select id="showFabEfficiency"><option value="true">ON</option><option value="false">OFF</option></select></div>
       <button id="loadBtn">Load saved data</button>
     </div>
 
@@ -69,11 +70,33 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
     </div>
     <div class="status" id="saveStatus"></div>
   </section>
+
+  <section class="card hidden" id="rosterCard">
+    <div class="topline">
+      <div>
+        <b>Chopped roster</b>
+        <div class="smallprint">Paste the roster exactly once after a week is finalized. One player per line is ideal. This frozen roster powers corpse value, Grim Reaper, and player-journey matching.</div>
+      </div>
+      <div id="rosterPill" class="pill final">NO ROSTER SAVED</div>
+    </div>
+    <div class="row" style="margin-top:12px;align-items:start">
+      <div class="field">
+        <label id="rosterLabel">CHOPPED OWNER</label>
+        <textarea id="choppedRoster" placeholder="Lamar Jackson&#10;Ja'Marr Chase&#10;Josh Jacobs&#10;..."></textarea>
+      </div>
+    </div>
+    <div class="note" style="margin-top:10px"><b>Corpse-value rule:</b> only winning bids from the first post-chop Wednesday waiver run count. A player not acquired in that run contributes $0, even if someone adds him later in the week.</div>
+    <div class="actions">
+      <button class="green" id="saveRosterBtn">Save Chopped Roster</button>
+    </div>
+    <div class="status" id="rosterStatus"></div>
+  </section>
 </div>
 
 <script>
 const OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Blizzy","Goofy","ChadCandles","Davis","Lou","Contestant 16","Contestant 17"];
 let sb=null;
+let currentChoppedOwner=null;
 const $=id=>document.getElementById(id);
 
 function setStatus(id,msg,ok=null){const el=$(id);el.textContent=msg;el.classList.remove('ok','bad');if(ok===true)el.classList.add('ok');if(ok===false)el.classList.add('bad')}
@@ -92,7 +115,7 @@ function renderRows(data=[]){
 }
 function applyState(state){
   if(!state)return;
-  $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);
+  $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);$('showFabEfficiency').value=String(state.show_fab_efficiency !== false);
   const p=$('statePill');p.textContent=`WEEK ${state.current_week} · ${state.week_status}`;p.className='pill '+(state.week_status==='LIVE'?'live':'final');
 }
 const BTB_SUPABASE_URL='https://jrrsfvrystagxxuuayjt.supabase.co';
@@ -115,7 +138,48 @@ async function loadStateAndScores(){
   const {data:scores,error:e2}=await sb.from('weekly_scores').select('*').eq('week',week).order('owner_name');
   if(e2)return setStatus('saveStatus','Could not read weekly_scores: '+e2.message,false);
   renderRows(scores||[]);setStatus('saveStatus',`Loaded Week ${week}. ${scores?.length||0} saved score rows found.`,true);
+  if(state.week_status==='COMPLETED') await loadChoppedRoster(week); else {$('rosterCard').classList.add('hidden');currentChoppedOwner=null;}
 }
+
+function rosterLines(raw){
+  return String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+}
+async function loadChoppedRoster(week){
+  const rows=collectRows().filter(r=>Number(r.current_score)>0);
+  if(!rows.length){
+    $('rosterCard').classList.add('hidden');
+    currentChoppedOwner=null;
+    return;
+  }
+  const chopped=[...rows].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
+  currentChoppedOwner=chopped.owner_name;
+  $('rosterCard').classList.remove('hidden');
+  $('rosterLabel').textContent=`${chopped.owner_name.toUpperCase()} · WEEK ${week} CHOPPED ROSTER`;
+  const {data,error}=await sb.from('chopped_rosters').select('player_name').eq('week',week).eq('owner_name',chopped.owner_name).order('player_name');
+  if(error){
+    $('choppedRoster').value='';
+    $('rosterPill').textContent='SETUP NEEDED';
+    return setStatus('rosterStatus','Chopped-roster storage is not ready yet. Run the included Supabase migration once.',false);
+  }
+  $('choppedRoster').value=(data||[]).map(x=>x.player_name).join('\n');
+  $('rosterPill').textContent=data?.length ? `${data.length} PLAYERS SAVED` : 'NO ROSTER SAVED';
+  setStatus('rosterStatus',data?.length ? `Loaded ${data.length} saved players.` : 'Paste this chopped roster when ready.',true);
+}
+async function saveChoppedRoster(){
+  const week=Number($('weekNumber').value);
+  if(!currentChoppedOwner) return setStatus('rosterStatus','Finalize/load the week first so the chopped owner can be identified.',false);
+  const players=[...new Set(rosterLines($('choppedRoster').value))];
+  if(!players.length) return setStatus('rosterStatus','Paste at least one player before saving.',false);
+  setStatus('rosterStatus','Saving roster...');
+  const {error:delErr}=await sb.from('chopped_rosters').delete().eq('week',week).eq('owner_name',currentChoppedOwner);
+  if(delErr) return setStatus('rosterStatus',delErr.message,false);
+  const payload=players.map(player_name=>({week,owner_name:currentChoppedOwner,player_name,updated_at:new Date().toISOString()}));
+  const {error}=await sb.from('chopped_rosters').insert(payload);
+  if(error) return setStatus('rosterStatus',error.message,false);
+  $('rosterPill').textContent=`${players.length} PLAYERS SAVED`;
+  setStatus('rosterStatus',`Saved ${players.length} players for ${currentChoppedOwner} · Week ${week}.`,true);
+}
+
 function collectRows(){
   const week=Number($('weekNumber').value);
   return [...document.querySelectorAll('#scoreRows tr')].map(tr=>({
@@ -127,7 +191,7 @@ function collectRows(){
 async function saveScores(){const {error}=await sb.from('weekly_scores').upsert(collectRows(),{onConflict:'week,owner_name'});if(error)throw error}
 async function saveState(status){
   const week=Number($('weekNumber').value);
-  const {error}=await sb.from('league_state').update({current_week:week,week_status:status,show_remaining_players:$('showPlayers').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
+  const {error}=await sb.from('league_state').update({current_week:week,week_status:status,show_remaining_players:$('showPlayers').value==='true',show_fab_efficiency:$('showFabEfficiency').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
   if(error)throw error;applyState({current_week:week,week_status:status});
 }
 $('loginBtn').addEventListener('click',async()=>{
@@ -154,9 +218,15 @@ $('finalizeBtn').addEventListener('click',async()=>{
     });
     await saveScores();
     await saveState('COMPLETED');
-    setStatus('saveStatus',`Week ${week} finalized · ${chopped.owner_name} chopped at ${Number(chopped.current_score).toFixed(2)}.`,true);
+    setStatus('saveStatus',`Week ${week} finalized · ${chopped.owner_name} chopped at ${Number(chopped.current_score).toFixed(2)}. Paste the chopped roster below when ready.`,true);
+    currentChoppedOwner=chopped.owner_name;
+    $('rosterCard').classList.remove('hidden');
+    $('rosterLabel').textContent=`${chopped.owner_name.toUpperCase()} · WEEK ${week} CHOPPED ROSTER`;
+    $('choppedRoster').value='';
+    $('rosterPill').textContent='NO ROSTER SAVED';
   }catch(e){setStatus('saveStatus',e.message,false)}
 });
+$('saveRosterBtn').addEventListener('click',saveChoppedRoster);
 renderRows();initClient();
 </script>
 </body>

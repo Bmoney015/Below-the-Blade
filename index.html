@@ -911,6 +911,54 @@ select,input{
 <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">$431</div><b>Ja'Marr Chase</b><p class="sub">Largest winning FAB bid of the season so far.</p></div>
 </div>
 
+
+<div class="fab-efficiency-feature" id="fabEfficiencyFeature">
+  <div class="section-title">
+    <div><div class="kicker">FAB bid efficiency</div><h2>Who is making every dollar count?</h2></div>
+    <span class="pill">NEXT-HIGHEST BID + $1</span>
+  </div>
+  <div class="econ">
+    <div class="panel">
+      <div class="kicker">Most efficient bidder</div>
+      <div class="metric">94%</div>
+      <b>Pete</b>
+      <p class="sub">$681 was enough to win the players he bought; he actually spent $725.</p>
+    </div>
+    <div class="panel">
+      <div class="kicker">Biggest overpay</div>
+      <div class="metric">$59</div>
+      <b>Cupps · Lamar Jackson</b>
+      <p class="sub">Winning bid $190 · next-highest bid $130 · $131 would have won.</p>
+    </div>
+    <div class="panel">
+      <div class="kicker">Perfect snipes</div>
+      <div class="metric">3</div>
+      <b>Davis</b>
+      <p class="sub">Three wins landed exactly $1 above the next-highest bid.</p>
+    </div>
+    <div class="panel">
+      <div class="kicker">FAB left on the table</div>
+      <div class="metric">$162</div>
+      <b>Cupps</b>
+      <p class="sub">Season-to-date dollars spent above the minimum needed to win.</p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:12px">
+    <div class="kicker">Season efficiency board</div>
+    <table class="table">
+      <thead><tr><th>Owner</th><th>FAB Spent</th><th>Minimum Needed</th><th>Excess Spent</th><th>Efficiency</th></tr></thead>
+      <tbody>
+        <tr><td>Pete</td><td>$725</td><td>$681</td><td>$44</td><td><b>94%</b></td></tr>
+        <tr><td>Davis</td><td>$612</td><td>$548</td><td>$64</td><td><b>90%</b></td></tr>
+        <tr><td>Tony Squares</td><td>$699</td><td>$594</td><td>$105</td><td><b>85%</b></td></tr>
+        <tr><td>Cupps</td><td>$684</td><td>$522</td><td>$162</td><td><b>76%</b></td></tr>
+      </tbody>
+    </table>
+    <p class="sub" style="margin-top:10px">Efficiency = total minimum FAB needed ÷ total winning FAB spent. For every winning bid, minimum needed is treated as the next-highest bid + $1.</p>
+  </div>
+</div>
+
 <div class="section-title"><div><div class="kicker">Player journeys</div><h2>The same stars keep eating league money</h2></div><span class="pill">OWNERSHIP + FAB HISTORY</span></div>
 <div class="journey">
 <div class="panel grim-reaper-panel" id="grimReaperPanel" hidden>
@@ -1516,6 +1564,8 @@ function setDashboardMode(mode){
   const panel=document.getElementById('finalSweatPanel');
   const completedBtn=document.getElementById('modeCompleted');
   const liveBtn=document.getElementById('modeLive');
+  const fabFeature=document.getElementById('fabEfficiencyFeature');
+  if(fabFeature) fabFeature.hidden = state.show_fab_efficiency === false;
   panel.hidden=!live;
   completedBtn.classList.toggle('active',!live);
   liveBtn.classList.toggle('active',live);
