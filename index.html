@@ -116,7 +116,18 @@ footer{text-align:center;color:#7b827f;font-size:12px;padding:20px}
 .next-path.bounty{background:#fff3d5;border:1px solid #e2c66f}
 @media(max-width:900px){.money-story-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.bounty-duo{grid-template-columns:1fr}.equity-main,.pot-row{grid-template-columns:1fr}.next-path{grid-template-columns:1fr 80px 70px}}
-.bounty-claimed-line{font-size:18px;font-weight:1000;color:#9f2623;margin:8px 0 2px}
+.bounty-claimed-line{font-size:18px;font-weight:1000;color:#168447;margin:8px 0 2px}
+.chop-card.bounty-claim{border-color:#c79a35;box-shadow:0 25px 80px rgba(0,0,0,.38),0 0 0 5px rgba(199,154,53,.12)}
+.chop-card.bounty-claim .chop-eyebrow{
+  display:inline-block;margin-top:10px;padding:7px 12px;border-radius:999px;
+  background:#173f2a;border:2px solid #d4ad4c;color:#f5d979;
+  font-size:13px;letter-spacing:.13em;box-shadow:0 3px 12px rgba(0,0,0,.12)
+}
+.chop-card.bounty-claim .bounty-claimed-line{
+  display:inline-block;margin:10px auto 4px;padding:8px 12px;border-radius:10px;
+  background:#eaf7ee;border:2px solid #68b681;color:#168447;
+  font-size:19px;letter-spacing:.015em
+}
 
 
 .replay-fill.secure{background:linear-gradient(90deg,#4f9f37,#69b84c)}
@@ -1160,6 +1171,8 @@ function showChopOverlay(name,week,score){
     const eyebrow=document.getElementById('chopOverlayEyebrow');
     const stamp=document.getElementById('chopOverlayStamp');
     const bountyLine=document.getElementById('chopOverlayBounty');
+    const card=overlay.querySelector('.chop-card');
+    card.classList.toggle('bounty-claim',Boolean(bounty));
 
     if(bounty){
       eyebrow.textContent='🎯 BOUNTY CLAIMED';
