@@ -1,6 +1,6 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Below the Blade — Pitch Mockup</title>
+<title>Below the Blade</title>
 <style>
 :root{--bg:#f4f0e7;--ink:#0c1c2b;--nav:#111d29;--panel:#fffdf8;--line:#d8cfbf;--gold:#c79228;--red:#b7332d;--green:#1e7653;--muted:#647383}
 *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
@@ -611,7 +611,7 @@ select,input{
 </div>
 
 <main class="wrap mock-page active" id="page-dashboard">
-<div class="notice"><b>PITCH MOCKUP · WEEK 6</b> — Names/headshots are real inputs supplied for the concept. All scores, bids, transactions and storylines below are fictional demonstration data.</div>
+
 <div class="dashboard-mode-switch">
   <span class="mode-label">DASHBOARD VIEW</span>
   <button class="mode-btn active" id="modeCompleted">Completed Report</button>
@@ -921,7 +921,7 @@ select,input{
 </tbody></table>
 </main>
 <main class="wrap mock-page" id="page-replay">
-  <div class="notice"><b>SEASON REPLAY · DEMO DATA</b> — This animation uses final weekly scores only. It is a comparative replay, not a reconstruction of live scoring chronology.</div>
+  <div class="notice"><b>SEASON REPLAY</b> — This animation uses final weekly scores only. It is a comparative replay, not a reconstruction of live scoring chronology.</div>
   <section class="panel replay-shell">
     <div class="replay-head">
       <div>
@@ -972,9 +972,9 @@ select,input{
   </section>
 </main>
 
-<footer>Concept prototype · seeded demo data · designed for a low-maintenance weekly score + transaction import workflow</footer>
 
-<main class="wrap mock-page" id="page-factions"><div class="notice"><b>FACTION BATTLE · DEMO DATA</b> — Fictional results; confirmed five-group structure.</div><section class="panel faction-shell"><div class="faction-title-row"><div><div class="kicker">Five paths in · one trophy out</div><h2>Faction Battle</h2><p class="sub">Which corner of the league is performing best? Rate stats normalize the unequal group sizes.</p></div><div class="faction-week"><small>THROUGH</small><strong>WEEK 6</strong></div></div><div class="faction-cards" id="factionCards"></div><div class="faction-table-wrap"><table class="faction-table"><thead><tr id="factionHead"></tr></thead><tbody id="factionBody"></tbody></table></div><div class="faction-footer"><div class="kicker">TALE OF THE TAPE</div><div id="factionVerdict"></div></div>
+
+<main class="wrap mock-page" id="page-factions"><section class="panel faction-shell"><div class="faction-title-row"><div><div class="kicker">Five paths in · one trophy out</div><h2>Faction Battle</h2><p class="sub">Which corner of the league is performing best? Rate stats normalize the unequal group sizes.</p></div><div class="faction-week"><small>THROUGH</small><strong>WEEK 6</strong></div></div><div class="faction-cards" id="factionCards"></div><div class="faction-table-wrap"><table class="faction-table"><thead><tr id="factionHead"></tr></thead><tbody id="factionBody"></tbody></table></div><div class="faction-footer"><div class="kicker">TALE OF THE TAPE</div><div id="factionVerdict"></div></div>
 <div class="faction-rosters">
   <div class="faction-rosters-head">
     <div><div class="kicker">WHO'S WHO</div><h3>Faction Rosters</h3></div>
@@ -1291,7 +1291,7 @@ function animateReplayWeek(){
             resolve();
           },slideDelay);
         }else{
-          document.getElementById("replayStory").textContent=`Week ${replayWeek} complete · no chop seeded in this pitch demo.`;
+          document.getElementById("replayStory").textContent=`Week ${replayWeek} complete.`;
           renderTotals();
           setTimeout(resolve,Math.max(700,1200/speed));
         }
@@ -1495,7 +1495,7 @@ function updateCompletedLabels(week,chopped,score){
   document.querySelector('#completedContext em').textContent=`Week ${week} is finalized. ${chopped} was chopped at ${(+score).toFixed(2)} points.`;
 
   document.querySelectorAll('.notice').forEach(n=>{
-    if(n.textContent.includes('PITCH MOCKUP')) n.innerHTML=`<b>WORKING PROTOTYPE · THROUGH WEEK ${week}</b> — Final Sweat is powered by Supabase. Historical FAB/storyline modules still contain seeded demonstration data until their imports are wired.`;
+    if(n.textContent.includes('WEEK 6') || n.textContent.includes('THROUGH WEEK')) n.innerHTML=`<b>THROUGH WEEK ${week}</b>`;
   });
 }
 
