@@ -4,7 +4,7 @@
 <style>
 :root{--bg:#f4f0e7;--ink:#0c1c2b;--nav:#111d29;--panel:#fffdf8;--line:#d8cfbf;--gold:#c79228;--red:#b7332d;--green:#1e7653;--muted:#647383}
 *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
-header{background:linear-gradient(120deg,#0d1823,#172a3b);color:white;padding:28px 5vw 24px;border-bottom:4px solid var(--gold)}
+header{position:relative;background:linear-gradient(120deg,#0d1823,#172a3b);color:white;padding:28px 430px 24px 5vw;border-bottom:4px solid var(--gold)}
 .eyebrow{color:#f0bd55;font-weight:900;letter-spacing:.15em;font-size:12px} h1{font-size:44px;margin:6px 0 4px;letter-spacing:-.04em}
 header p{margin:0;color:#cbd5df;max-width:850px;font-size:17px} .wrap{width:min(1480px,94vw);margin:24px auto 60px}
 .notice{background:#fff4cf;border:1px solid #e0c56e;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:16px}
@@ -609,11 +609,20 @@ select,input{
 .application-brand .ab-kicker{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#f2c14e;font-weight:900}
 .application-brand .ab-name{font-size:20px;font-weight:950;color:#f8f2e7;margin-top:3px}
 .application-brand .ab-sub{font-size:11px;color:#9fc2d6;margin-top:4px}
-@media(max-width:900px){.application-brand{position:static;margin:12px 18px 0;max-width:none;text-align:left}}
+@media(max-width:900px){header{padding-right:5vw}.application-brand{position:static;margin:16px 0 0;max-width:none;text-align:left}}
 </style>
 </head>
 <body>
-<header><div class="eyebrow">18 ENTER · ONE SURVIVES</div><h1>🪓 Below the Blade</h1><p>A companion analytics concept for the league stories the standings don't tell — survival margins, chopped-roster economics, player journeys and weekly superlatives.</p></header>
+<header>
+  <div class="eyebrow">18 ENTER · ONE SURVIVES</div>
+  <h1>🪓 Below the Blade</h1>
+  <p>A companion analytics concept for the league stories the standings don't tell — survival margins, chopped-roster economics, player journeys and weekly superlatives.</p>
+  <div class="application-brand">
+    <div class="ab-kicker">CUSTOM BUILT FOR</div>
+    <div class="ab-name">T's &amp; P's Guillotine League</div>
+    <div class="ab-sub">A Below the Blade league companion</div>
+  </div>
+</header>
 <nav class="mock-nav">
   <button class="mock-nav-btn active" data-page="dashboard">Dashboard</button>
   <button class="mock-nav-btn" data-page="replay">Season Replay</button>
@@ -704,13 +713,13 @@ select,input{
       <div class="next-title">SURVIVE NEXT WEEK</div>
       <div class="next-path">
         <span>Normal chop</span>
-        <b id="nextNormal">$166.67</b>
-        <em id="nextNormalGain">+$12.82</em>
+        <b id="nextNormal">$167</b>
+        <em id="nextNormalGain">+$13</em>
       </div>
       <div class="next-path bounty">
         <span>🎯 Pete / Tony bounty chop</span>
-        <b id="nextBounty">$212.50</b>
-        <em id="nextBountyGain">+$58.65</em>
+        <b id="nextBounty">$213</b>
+        <em id="nextBountyGain">+$59</em>
       </div>
     </div>
   </div>
@@ -1523,16 +1532,16 @@ function renderBountyEconomy(){
   const bountyEquity=(guaranteedPot+(activeTargets.length?currentBounty:0))/(CURRENT_SURVIVORS-1);
   const maxPot=guaranteedPot+remainingBounty;
 
-  document.getElementById('equityCurrent').textContent=currency(currentEquity);
+  document.getElementById('equityCurrent').textContent=currency0(currentEquity);
   document.getElementById('equityFormula').textContent=`${currency0(guaranteedPot)} guaranteed ÷ ${CURRENT_SURVIVORS} survivors`;
-  document.getElementById('equityGained').textContent='+'+currency(currentEquity-priorEquity).replace('$','');
+  document.getElementById('equityGained').textContent='+'+currency0(currentEquity-priorEquity).replace('$','');
   document.getElementById('guaranteedPot').textContent=currency0(guaranteedPot);
   document.getElementById('maxPot').textContent=currency0(maxPot);
   document.getElementById('maxPotDetail').textContent=`${currency0(guaranteedPot)} locked + ${currency0(remainingBounty)} still hunting`;
-  document.getElementById('nextNormal').textContent=currency(normalEquity);
-  document.getElementById('nextNormalGain').textContent='+'+currency(normalEquity-currentEquity).replace('$','');
-  document.getElementById('nextBounty').textContent=activeTargets.length?currency(bountyEquity):'—';
-  document.getElementById('nextBountyGain').textContent=activeTargets.length?'+'+currency(bountyEquity-currentEquity).replace('$',''):'—';
+  document.getElementById('nextNormal').textContent=currency0(normalEquity);
+  document.getElementById('nextNormalGain').textContent='+'+currency0(normalEquity-currentEquity).replace('$','');
+  document.getElementById('nextBounty').textContent=activeTargets.length?currency0(bountyEquity):'—';
+  document.getElementById('nextBountyGain').textContent=activeTargets.length?'+'+currency0(bountyEquity-currentEquity).replace('$',''):'—';
 }
 
 const FACTION_GROUPS={"SHOW TEAM": ["Pete", "Tony Squares", "Lou"], "F&F": ["Nez", "Davis", "Kitchen", "Zakarian", "Cooterdoodle"], "SYTYCT": ["Rambis", "Goofy", "Zak", "ChadCandles", "Cupps"], "FORMER CHAMPS": ["Steph", "Blizzy"], "YOUTUBE WILDCARDS": ["Contestant 16", "Contestant 17", "Contestant 18"]};
@@ -1628,12 +1637,36 @@ function updateCompletedLabels(week,chopped,score){
   });
 }
 
-async function loadPersistentChops(){
+async function loadPersistentChops(state){
+  const productionMode = state && state.use_mock_history === false;
+
+  if(productionMode){
+    Object.keys(REPLAY_CHOPPED).forEach(k=>delete REPLAY_CHOPPED[k]);
+    Object.keys(REPLAY_WEEKLY).forEach(k=>delete REPLAY_WEEKLY[k]);
+  }
+
   const {data,error}=await btbSupabase.from('finalized_chops').select('week,owner_name,score').order('week');
   if(error) return;
-  (data||[]).forEach(r=>{
-    REPLAY_CHOPPED[String(r.week)]=r.owner_name;
-  });
+
+  const chops=data||[];
+  chops.forEach(r=>{ REPLAY_CHOPPED[String(r.week)]=r.owner_name; });
+
+  // In a real season, reconstruct every completed week's scores from Supabase.
+  if(productionMode && chops.length){
+    const maxFinal=Math.max(...chops.map(r=>Number(r.week)));
+    const {data:history}=await btbSupabase
+      .from('weekly_scores')
+      .select('week,owner_name,current_score')
+      .lte('week',maxFinal)
+      .order('week');
+
+    (history||[]).forEach(r=>{
+      const w=String(r.week);
+      if(!REPLAY_WEEKLY[w]) REPLAY_WEEKLY[w]={};
+      REPLAY_WEEKLY[w][r.owner_name]=Number(r.current_score);
+    });
+  }
+
   CURRENT_SURVIVORS=Math.max(1,18-Object.keys(REPLAY_CHOPPED).length);
   renderAwardUnlocks();
   refreshEliminationVisuals();
@@ -1677,7 +1710,7 @@ async function loadLiveFinalSweat(){
   const fabFeature=document.getElementById('fabEfficiencyFeature');
   if(fabFeature) fabFeature.hidden = state.show_fab_efficiency === false;
 
-  await loadPersistentChops();
+  await loadPersistentChops(state);
 
   const liveBtn=document.getElementById('modeLive');
   const completedThrough=Math.max(0,Number(state.current_week)-1);

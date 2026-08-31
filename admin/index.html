@@ -20,7 +20,12 @@ button.primary{background:var(--gold);color:#17212a;border-color:var(--gold)}but
 .pill{display:inline-flex;padding:5px 8px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:900}.pill.live{color:#fff;background:#8f2925;border-color:#c8554c}.pill.final{color:#1b2b20;background:var(--green);border-color:var(--green)}
 .hidden{display:none!important}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px 7px;border-bottom:1px solid #324652;text-align:left}
 th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}td input{padding:8px 9px}td.owner{font-weight:850;white-space:nowrap}td.check{text-align:center}td.check input{width:auto;transform:scale(1.1)}
-.note{padding:10px 12px;background:#1e2b24;border:1px solid #59633e;border-radius:9px;color:#d9d6a4;font-size:11px;line-height:1.45}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.smallprint{font-size:10px;color:var(--muted);line-height:1.45}
+.note{padding:10px 12px;background:#1e2b24;border:1px solid #59633e;border-radius:9px;color:#d9d6a4;font-size:11px;line-height:1.45}
+.danger-zone{border-color:#8c3b37;background:#20191b}.danger-zone h2{margin:0 0 4px;color:#ff8a82}.danger-zone .warning{color:#ffc0bb}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}
+.modal{width:min(600px,96vw);background:#152631;border:2px solid #a84740;border-radius:16px;padding:20px;box-shadow:0 20px 70px rgba(0,0,0,.45)}
+.modal h2{margin:0 0 8px;color:#ff8a82}.modal p{color:#d7e0e6;line-height:1.5}.modal strong{color:#fff}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.smallprint{font-size:10px;color:var(--muted);line-height:1.45}
 </style>
 </head>
 <body>
@@ -71,6 +76,21 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
     <div class="status" id="saveStatus"></div>
   </section>
 
+
+  <section class="card danger-zone hidden" id="dangerCard">
+    <h2>Danger Zone</h2>
+    <div class="smallprint warning">Recovery tools for scoring corrections and the eventual real-season launch.</div>
+    <div class="actions">
+      <button class="red" id="undoWeekBtn">↶ Undo Last Finalization</button>
+      <button class="red" id="resetSeasonBtn">⚠ Reset Season to Week 1</button>
+    </div>
+    <div class="smallprint" style="margin-top:10px">
+      <b>Undo Last Finalization</b> reopens only the most recently finalized week, removes that week's chop and frozen roster, and keeps its scores for correction.<br>
+      <b>Reset Season</b> clears all season scores, chops and frozen rosters, disables mock history, and returns all 18 owners to Week 1 LIVE.
+    </div>
+    <div class="status" id="dangerStatus"></div>
+  </section>
+
   <section class="card hidden" id="rosterCard">
     <div class="topline">
       <div>
@@ -93,8 +113,23 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
   </section>
 </div>
 
+<div class="modal-backdrop hidden" id="resetModal">
+  <div class="modal">
+    <h2>⚠ Reset the entire season?</h2>
+    <p>This is the <strong>production launch reset</strong>. It will permanently clear all saved weekly scores, finalized chops and chopped rosters, then return Below the Blade to <strong>Week 1 · LIVE · 18 owners alive</strong>.</p>
+    <p>Your owner names, factions, site design and commissioner login are not removed.</p>
+    <label>TYPE RESET TO CONFIRM</label>
+    <input id="resetConfirmText" autocomplete="off" placeholder="RESET">
+    <div class="modal-actions">
+      <button id="cancelResetBtn">Cancel</button>
+      <button class="red" id="confirmResetBtn">Reset Season</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Blizzy","Goofy","ChadCandles","Davis","Lou","Contestant 16","Contestant 17"];
+const ALL_OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Nez","Blizzy","Goofy","ChadCandles","Davis","Kitchen","Zakarian","Cooterdoodle","Lou","Contestant 16","Contestant 17","Contestant 18"];
+let ACTIVE_OWNERS=[...ALL_OWNERS];
 let sb=null;
 let currentChoppedOwner=null;
 const $=id=>document.getElementById(id);
@@ -102,7 +137,7 @@ const $=id=>document.getElementById(id);
 function setStatus(id,msg,ok=null){const el=$(id);el.textContent=msg;el.classList.remove('ok','bad');if(ok===true)el.classList.add('ok');if(ok===false)el.classList.add('bad')}
 function renderRows(data=[]){
   const map=Object.fromEntries(data.map(r=>[r.owner_name,r]));
-  $('scoreRows').innerHTML=OWNERS.map(name=>{
+  $('scoreRows').innerHTML=ACTIVE_OWNERS.map(name=>{
     const r=map[name]||{};
     return `<tr data-owner="${name}">
       <td class="owner">${name}</td>
@@ -126,7 +161,7 @@ async function initClient(){
   if(session)onLoggedIn(session.user);
 }
 async function onLoggedIn(user){
-  $('adminCard').classList.remove('hidden');$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');
+  $('adminCard').classList.remove('hidden');$('dangerCard').classList.remove('hidden');$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');
   setStatus('authStatus',`Logged in as ${user.email}`,true);await loadStateAndScores();
 }
 async function loadStateAndScores(){
@@ -135,6 +170,11 @@ async function loadStateAndScores(){
   if(e1)return setStatus('saveStatus','Could not read league_state: '+e1.message,false);
   applyState(state);
   const week=Number(state.current_week);
+  const {data:priorChops,error:chopReadErr}=await sb.from('finalized_chops').select('week,owner_name').lt('week',week);
+  if(chopReadErr)return setStatus('saveStatus','Could not read chop history: '+chopReadErr.message,false);
+  const alreadyOut=new Set((priorChops||[]).map(r=>r.owner_name));
+  ACTIVE_OWNERS=ALL_OWNERS.filter(name=>!alreadyOut.has(name));
+
   const {data:scores,error:e2}=await sb.from('weekly_scores').select('*').eq('week',week).order('owner_name');
   if(e2)return setStatus('saveStatus','Could not read weekly_scores: '+e2.message,false);
   renderRows(scores||[]);setStatus('saveStatus',`Loaded Week ${week}. ${scores?.length||0} saved score rows found.`,true);
@@ -194,12 +234,104 @@ async function saveState(status){
   const {error}=await sb.from('league_state').update({current_week:week,week_status:status,show_remaining_players:$('showPlayers').value==='true',show_fab_efficiency:$('showFabEfficiency').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
   if(error)throw error;applyState({current_week:week,week_status:status});
 }
+
+async function undoLastFinalization(){
+  setStatus('dangerStatus','Checking latest finalized week...');
+  const {data,error}=await sb.from('finalized_chops').select('week,owner_name,score').order('week',{ascending:false}).limit(1);
+  if(error) return setStatus('dangerStatus',error.message,false);
+  if(!data?.length) return setStatus('dangerStatus','There is no finalized week to undo.',false);
+
+  const last=data[0];
+  const ok=confirm(
+    `Undo Week ${last.week} finalization?\n\n`+
+    `${last.owner_name} will be restored to the active field.\n`+
+    `The Week ${last.week} chop record and frozen chopped roster will be removed.\n`+
+    `Week ${last.week} scores will be KEPT so you can correct them and finalize again.\n\n`+
+    `Only the most recently finalized week can be undone.`
+  );
+  if(!ok) return;
+
+  try{
+    setStatus('dangerStatus',`Reopening Week ${last.week}...`);
+    let r=await sb.from('chopped_rosters').delete().eq('week',last.week);
+    if(r.error) throw r.error;
+
+    r=await sb.from('finalized_chops').delete().eq('week',last.week);
+    if(r.error) throw r.error;
+
+    r=await sb.from('league_state').update({
+      current_week:last.week,
+      week_status:'LIVE',
+      updated_at:new Date().toISOString()
+    }).eq('id',1);
+    if(r.error) throw r.error;
+
+    $('rosterCard').classList.add('hidden');
+    currentChoppedOwner=null;
+    setStatus('dangerStatus',`Week ${last.week} reopened. Scores were preserved for correction.`,true);
+    await loadStateAndScores();
+  }catch(e){
+    setStatus('dangerStatus',e.message,false);
+  }
+}
+
+function openResetModal(){
+  $('resetConfirmText').value='';
+  $('resetModal').classList.remove('hidden');
+  setTimeout(()=>$('resetConfirmText').focus(),50);
+}
+function closeResetModal(){ $('resetModal').classList.add('hidden'); }
+
+async function resetSeasonToWeek1(){
+  if($('resetConfirmText').value.trim().toUpperCase()!=='RESET'){
+    return alert('Type RESET exactly to confirm.');
+  }
+
+  $('confirmResetBtn').disabled=true;
+  try{
+    setStatus('dangerStatus','Resetting season...');
+    let r=await sb.from('chopped_rosters').delete().gte('week',1);
+    if(r.error) throw r.error;
+
+    r=await sb.from('finalized_chops').delete().gte('week',1);
+    if(r.error) throw r.error;
+
+    r=await sb.from('weekly_scores').delete().gte('week',1);
+    if(r.error) throw r.error;
+
+    r=await sb.from('league_state').update({
+      current_week:1,
+      week_status:'LIVE',
+      use_mock_history:false,
+      updated_at:new Date().toISOString()
+    }).eq('id',1);
+    if(r.error) throw r.error;
+
+    ACTIVE_OWNERS=[...ALL_OWNERS];
+    closeResetModal();
+    $('rosterCard').classList.add('hidden');
+    currentChoppedOwner=null;
+    setStatus('dangerStatus','Season reset complete: Week 1 LIVE, 18 owners alive, no saved season history.',true);
+    await loadStateAndScores();
+  }catch(e){
+    setStatus('dangerStatus',e.message,false);
+  }finally{
+    $('confirmResetBtn').disabled=false;
+  }
+}
+
+$('undoWeekBtn').addEventListener('click',undoLastFinalization);
+$('resetSeasonBtn').addEventListener('click',openResetModal);
+$('cancelResetBtn').addEventListener('click',closeResetModal);
+$('confirmResetBtn').addEventListener('click',resetSeasonToWeek1);
+$('resetModal').addEventListener('click',e=>{if(e.target===$('resetModal'))closeResetModal();});
+
 $('loginBtn').addEventListener('click',async()=>{
   if(!sb)await initClient();if(!sb)return;setStatus('authStatus','Logging in...');
   const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
   if(error)return setStatus('authStatus',error.message,false);onLoggedIn(data.user);
 });
-$('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();$('adminCard').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');setStatus('authStatus','Logged out.')});
+$('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();$('adminCard').classList.add('hidden');$('dangerCard').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');setStatus('authStatus','Logged out.')});
 $('loadBtn').addEventListener('click',loadStateAndScores);
 $('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
