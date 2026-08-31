@@ -597,6 +597,12 @@ select,input{
 .sweat-error{padding:12px;border:1px solid #74423e;border-radius:9px;color:#ef8a82;background:#291d20}
 
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+.grim-reaper-entry+.grim-reaper-entry{border-top:1px solid #334b59;margin-top:12px;padding-top:12px}
+.grim-reaper-entry .metric{margin-bottom:4px}
+.grim-reaper-badge{display:inline-block;margin-top:7px;padding:4px 8px;border:1px solid #9f3a34;border-radius:999px;color:#ff8a82;font-size:10px;font-weight:900;letter-spacing:.06em}
+</style>
 </head>
 <body>
 <header><div class="eyebrow">18 ENTER · ONE SURVIVES</div><h1>🪓 Below the Blade</h1><p>A companion analytics concept for the league stories the standings don't tell — survival margins, chopped-roster economics, player journeys and weekly superlatives.</p></header>
@@ -717,15 +723,15 @@ select,input{
       <h3>Davis escaped by 1.37</h3>
       <p>The narrowest escape of the season. One tiny scoring swing and the graveyard looks different.</p>
     </article>
-    <article class="v18-story cool">
-      <div class="eyebrow">🧊 COMA-PROOF</div>
-      <h3>Pete hasn't sniffed the blade</h3>
+    <article class="v18-story cool award-card" data-min-week="2">
+      <div class="eyebrow">🏎️ CRUISE CONTROL</div>
+      <h3>Pete is cruising</h3>
       <p>His closest call is still <strong>24.6 points</strong> above a weekly cut line.</p>
     </article>
-    <article class="v18-story warn">
-      <div class="eyebrow">⚠️ DANGER TOURIST</div>
+    <article class="v18-story warn award-card" data-min-week="1">
+      <div class="eyebrow">🧊 THIN ICE</div>
       <h3>Davis keeps flirting with disaster</h3>
-      <p>Repeated danger-zone finishes make that 1.37-point survival feel more warning than fluke.</p>
+      <p>Repeated danger-zone finishes have Davis living on thin ice.</p>
     </article>
   </div>
 </section>
@@ -907,18 +913,21 @@ select,input{
 
 <div class="section-title"><div><div class="kicker">Player journeys</div><h2>The same stars keep eating league money</h2></div><span class="pill">OWNERSHIP + FAB HISTORY</span></div>
 <div class="journey">
-<div class="panel"><div class="kicker">☠ Cursed player</div><div class="metric">Ja'Marr Chase</div><p>Three different rosters. Two owners already chopped. <b>$1,087</b> in cumulative league FAB consumed.</p><div class="route"><span class="node">Drafted · Mystery 18</span><span class="arrow">→ $431</span><span class="node">Tony Squares</span><span class="arrow">→ $389</span><span class="node">Nez</span><span class="arrow">→ $267</span><span class="node">Current: Pete</span></div></div>
-<div class="panel"><div class="kicker">🧛 FAB vampire</div><div class="metric">8.4%</div><p>Chase alone has consumed <b>8.4% of all FAB spent league-wide</b>. Late-season dollars are normalized against the money remaining when each bid occurred.</p><div class="stats"><div class="stat"><small>Times Cut</small><b>2</b></div><div class="stat"><small>Times Bought</small><b>3</b></div><div class="stat"><small>Total FAB</small><b>$1,087</b></div><div class="stat"><small>Current Owner</small><b>Pete</b></div></div></div>
+<div class="panel grim-reaper-panel" id="grimReaperPanel" hidden>
+  <div class="kicker">☠ GRIM REAPER</div>
+  <div id="grimReaperCards"></div>
+</div>
+<div class="panel"><div class="kicker">💸 Money Pit</div><div class="metric">8.4%</div><p>Chase has become the league's biggest money pit, consuming <b>8.4% of all FAB spent league-wide</b>. Late-season dollars are normalized against the money remaining when each bid occurred.</p><div class="stats"><div class="stat"><small>Times Cut</small><b>2</b></div><div class="stat"><small>Times Bought</small><b>3</b></div><div class="stat"><small>Total FAB</small><b>$1,087</b></div><div class="stat"><small>Current Owner</small><b>Pete</b></div></div></div>
 </div>
 
 <div class="section-title"><div><div class="kicker">Season superlatives</div><h2>The stories worth talking about</h2></div></div>
 <table class="table"><thead><tr><th>Award</th><th>Owner / Player</th><th>Why it matters</th></tr></thead><tbody>
 <tr><td>🪒 Closest Shave</td><td>Davis</td><td>Survived Week 6 by just 1.37 points.</td></tr>
-<tr><td>🛌 Coma-Proof</td><td>Pete</td><td>Has cleared every cut line by 24.6+ points.</td></tr>
+<tr class="award-row" data-min-week="2"><td>🏎️ Cruise Control</td><td>Pete</td><td>Has cleared every cut line by 24.6+ points.</td></tr>
 <tr><td>💀 Cheapest Corpse</td><td>Mystery 18</td><td>Only $97 of winning FAB bids came off the chopped roster.</td></tr>
-<tr><td>💸 FAB Vampire</td><td>Ja'Marr Chase</td><td>$1,087 spent across three acquisitions.</td></tr>
-<tr><td>🔥 Danger Tourist</td><td>Davis</td><td>Bottom-three finish in four of six weeks and still alive.</td></tr>
-</tbody></table>
+<tr class="award-row" data-min-week="3"><td>💸 Money Pit</td><td>Ja'Marr Chase</td><td>$1,087 spent across three acquisitions.</td></tr>
+<tr class="award-row" data-min-week="1"><td>🧊 Thin Ice</td><td>Davis</td><td>Bottom-three finish in four of six weeks and still alive.</td></tr>
+<tbody id="grimReaperRows"></tbody></table>
 </main>
 <main class="wrap mock-page" id="page-replay">
   <div class="notice"><b>SEASON REPLAY</b> — This animation uses final weekly scores only. It is a comparative replay, not a reconstruction of live scoring chronology.</div>
@@ -988,6 +997,69 @@ select,input{
     <div class="faction-roster-pod"><h4>YOUTUBE WILDCARDS</h4><span class="roster-owner">Contestant 16</span><span class="roster-owner">Contestant 17</span><span class="roster-owner eliminated">Contestant 18</span></div>
   </div>
 </div></section></main>
+
+<script>
+/*
+  STORYLINE UNLOCKS
+  Thin Ice: Week 1+
+  Cruise Control: Week 2+
+  Money Pit: Week 3+
+  Grim Reaper: appears only when earned. Multiple players may qualify.
+
+  GRIM REAPER RULE:
+  - player appears on at least 2 chopped rosters, AND
+  - either those appearances are >50% of all chops to date,
+    OR player has appeared on 3+ chopped rosters.
+*/
+const GRIM_REAPER_CHOP_ROSTERS = {
+  // Each entry is a chopped roster on which the player appeared at elimination.
+  // Multiple qualifying players are intentionally supported.
+  "Ja'Marr Chase": [3,5]
+};
+
+function completedWeekForAwards(){
+  const weeks=Object.keys(REPLAY_CHOPPED||{}).map(Number).filter(Number.isFinite);
+  return weeks.length ? Math.max(...weeks) : 0;
+}
+function grimReapersThrough(week){
+  const totalChops=Object.keys(REPLAY_CHOPPED||{}).map(Number).filter(w=>w<=week).length;
+  if(!totalChops) return [];
+  return Object.entries(GRIM_REAPER_CHOP_ROSTERS)
+    .map(([player,weeks])=>{
+      const hits=weeks.filter(w=>w<=week).length;
+      const rate=hits/totalChops;
+      return {player,hits,totalChops,rate};
+    })
+    .filter(x=>x.hits>=2 && (x.hits>=3 || x.rate>0.5))
+    .sort((a,b)=>b.hits-a.hits || b.rate-a.rate || a.player.localeCompare(b.player));
+}
+function renderAwardUnlocks(week=completedWeekForAwards()){
+  document.querySelectorAll('[data-min-week]').forEach(el=>{
+    el.hidden = week < Number(el.dataset.minWeek||1);
+  });
+
+  const reapers=grimReapersThrough(week);
+  const panel=document.getElementById('grimReaperPanel');
+  const cards=document.getElementById('grimReaperCards');
+  if(panel && cards){
+    panel.hidden=!reapers.length;
+    cards.innerHTML=reapers.map(r=>`
+      <div class="grim-reaper-entry">
+        <div class="metric">${r.player}</div>
+        <p>Found on <b>${r.hits} of the ${r.totalChops} chopped rosters</b> through Week ${week}.</p>
+        <span class="grim-reaper-badge">${Math.round(r.rate*100)}% OF CHOPS</span>
+      </div>`).join('');
+  }
+  const rows=document.getElementById('grimReaperRows');
+  if(rows){
+    rows.innerHTML=reapers.map(r=>`
+      <tr><td>☠ Grim Reaper</td><td>${r.player}</td>
+      <td>Appeared on ${r.hits} of ${r.totalChops} chopped rosters (${Math.round(r.rate*100)}%).</td></tr>`).join('');
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>renderAwardUnlocks());
+</script>
+
 <script>
 const REPLAY_WEEKLY={"1": {"Cupps": 129, "Tony Squares": 141, "Zak": 118, "Rambis": 136, "Steph": 124, "Pete": 155, "Nez": 162, "Blizzy": 132, "Goofy": 116, "ChadCandles": 128, "Davis": 111, "Kitchen": 126, "Zakarian": 123, "Cooterdoodle": 88, "Lou": 119, "Contestant 16": 134, "Contestant 17": 122, "Contestant 18": 117}, "2": {"Cupps": 133, "Tony Squares": 126, "Zak": 142, "Rambis": 131, "Steph": 119, "Pete": 147, "Nez": 158, "Blizzy": 125, "Goofy": 121, "ChadCandles": 137, "Davis": 108, "Kitchen": 129, "Zakarian": 77, "Lou": 116, "Contestant 16": 139, "Contestant 17": 113, "Contestant 18": 124}, "3": {"Cupps": 145, "Tony Squares": 132, "Zak": 127, "Rambis": 138, "Steph": 134, "Pete": 151, "Nez": 154, "Blizzy": 129, "Goofy": 120, "ChadCandles": 141, "Davis": 114, "Kitchen": 125, "Lou": 117, "Contestant 16": 136, "Contestant 17": 123, "Contestant 18": 82}, "4": {"Cupps": 139, "Tony Squares": 144, "Zak": 129, "Rambis": 134, "Steph": 122, "Pete": 149, "Nez": 151, "Blizzy": 127, "Goofy": 119, "ChadCandles": 132, "Davis": 111, "Kitchen": 103.9, "Lou": 106.01, "Contestant 16": 137, "Contestant 17": 124}, "5": {"Cupps": 151, "Tony Squares": 137, "Zak": 132, "Rambis": 129, "Steph": 126, "Pete": 149, "Nez": 61, "Blizzy": 117, "Goofy": 114, "ChadCandles": 122, "Davis": 110, "Lou": 111, "Contestant 16": 139, "Contestant 17": 124}, "6": {"Cupps": 144, "Tony Squares": 136, "Zak": 129, "Rambis": 133, "Steph": 124, "Pete": 156, "Blizzy": 119, "Goofy": 113, "ChadCandles": 127, "Davis": 109, "Lou": 112, "Contestant 16": 138, "Contestant 17": 121}};
 const REPLAY_CHOPPED={"1": "Cooterdoodle", "2": "Zakarian", "3": "Contestant 18", "4": "Kitchen", "5": "Nez"};
@@ -1510,6 +1582,7 @@ function applyCompletedWeek(state,rawScores){
 
   const chopped=[...rows].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
   REPLAY_CHOPPED[String(week)]=chopped.owner_name;
+  renderAwardUnlocks(week);
 
   CURRENT_WEEK=Math.min(17,week+1);
   CURRENT_SURVIVORS=Math.max(1,18-Object.keys(REPLAY_CHOPPED).length);
