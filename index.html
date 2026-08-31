@@ -1676,7 +1676,8 @@ async function loadPersistentChops(state){
 
 function applyCompletedWeek(state,rawScores){
   const week=Number(state.current_week);
-  const rows=(rawScores||[]).filter(r=>Number(r.current_score)>0);
+  const eliminatedOwners=new Set(Object.values(REPLAY_CHOPPED||{}));
+  const rows=(rawScores||[]).filter(r=>!eliminatedOwners.has(r.owner_name) && Number(r.current_score)>0);
   if(!rows.length) return;
 
   const scores={};
