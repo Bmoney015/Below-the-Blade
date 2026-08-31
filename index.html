@@ -1564,8 +1564,6 @@ function setDashboardMode(mode){
   const panel=document.getElementById('finalSweatPanel');
   const completedBtn=document.getElementById('modeCompleted');
   const liveBtn=document.getElementById('modeLive');
-  const fabFeature=document.getElementById('fabEfficiencyFeature');
-  if(fabFeature) fabFeature.hidden = state.show_fab_efficiency === false;
   panel.hidden=!live;
   completedBtn.classList.toggle('active',!live);
   liveBtn.classList.toggle('active',live);
@@ -1653,6 +1651,9 @@ async function loadLiveFinalSweat(){
     document.getElementById('sweatGrid').innerHTML=`<div class="sweat-error">Live data unavailable: ${escHtml(stateErr.message)}</div>`;
     return;
   }
+
+  const fabFeature=document.getElementById('fabEfficiencyFeature');
+  if(fabFeature) fabFeature.hidden = state.show_fab_efficiency === false;
 
   const liveBtn=document.getElementById('modeLive');
   const completedThrough=Math.max(0,Number(state.current_week)-1);
