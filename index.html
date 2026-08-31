@@ -603,6 +603,14 @@ select,input{
 .grim-reaper-entry .metric{margin-bottom:4px}
 .grim-reaper-badge{display:inline-block;margin-top:7px;padding:4px 8px;border:1px solid #9f3a34;border-radius:999px;color:#ff8a82;font-size:10px;font-weight:900;letter-spacing:.06em}
 </style>
+
+<style>
+.application-brand{position:absolute;right:28px;top:20px;min-width:300px;max-width:360px;border:1px solid #d7a624;border-radius:14px;padding:14px 16px;background:rgba(14,29,39,.72);text-align:right}
+.application-brand .ab-kicker{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#f2c14e;font-weight:900}
+.application-brand .ab-name{font-size:20px;font-weight:950;color:#f8f2e7;margin-top:3px}
+.application-brand .ab-sub{font-size:11px;color:#9fc2d6;margin-top:4px}
+@media(max-width:900px){.application-brand{position:static;margin:12px 18px 0;max-width:none;text-align:left}}
+</style>
 </head>
 <body>
 <header><div class="eyebrow">18 ENTER · ONE SURVIVES</div><h1>🪓 Below the Blade</h1><p>A companion analytics concept for the league stories the standings don't tell — survival margins, chopped-roster economics, player journeys and weekly superlatives.</p></header>
@@ -669,12 +677,12 @@ select,input{
     <div class="equity-main">
       <div>
         <small>CURRENT SURVIVOR EQUITY</small>
-        <strong id="equityCurrent">$153.85</strong>
+        <strong id="equityCurrent">$154</strong>
         <span id="equityFormula">$2,000 guaranteed ÷ 13 survivors</span>
       </div>
       <div class="equity-gain">
         <small>SURVIVAL VALUE GAINED</small>
-        <b id="equityGained">+$10.99</b>
+        <b id="equityGained">+$11</b>
         <span>from the prior chop</span>
       </div>
     </div>
@@ -1573,6 +1581,7 @@ function setDashboardMode(mode){
 document.getElementById('modeCompleted').addEventListener('click',()=>setDashboardMode('completed'));
 document.getElementById('modeLive').addEventListener('click',()=>setDashboardMode('live'));
 
+function money0(v){return '$'+Math.round(Number(v||0)).toLocaleString();}
 function escHtml(v=''){
   return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
@@ -1619,6 +1628,19 @@ function updateCompletedLabels(week,chopped,score){
   });
 }
 
+async function loadPersistentChops(){
+  const {data,error}=await btbSupabase.from('finalized_chops').select('week,owner_name,score').order('week');
+  if(error) return;
+  (data||[]).forEach(r=>{
+    REPLAY_CHOPPED[String(r.week)]=r.owner_name;
+  });
+  CURRENT_SURVIVORS=Math.max(1,18-Object.keys(REPLAY_CHOPPED).length);
+  renderAwardUnlocks();
+  refreshEliminationVisuals();
+  renderFactions();
+  renderBountyEconomy();
+}
+
 function applyCompletedWeek(state,rawScores){
   const week=Number(state.current_week);
   const rows=(rawScores||[]).filter(r=>Number(r.current_score)>0);
@@ -1654,6 +1676,8 @@ async function loadLiveFinalSweat(){
 
   const fabFeature=document.getElementById('fabEfficiencyFeature');
   if(fabFeature) fabFeature.hidden = state.show_fab_efficiency === false;
+
+  await loadPersistentChops();
 
   const liveBtn=document.getElementById('modeLive');
   const completedThrough=Math.max(0,Number(state.current_week)-1);

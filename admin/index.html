@@ -218,6 +218,14 @@ $('finalizeBtn').addEventListener('click',async()=>{
     });
     await saveScores();
     await saveState('COMPLETED');
+    const {error:chopErr}=await sb.from('finalized_chops').upsert({
+      week,
+      owner_name:chopped.owner_name,
+      score:Number(chopped.current_score),
+      updated_at:new Date().toISOString()
+    },{onConflict:'week'});
+    if(chopErr) return setStatus('saveStatus',`Week finalized, but chop-history save failed: ${chopErr.message}`,false);
+
     setStatus('saveStatus',`Week ${week} finalized · ${chopped.owner_name} chopped at ${Number(chopped.current_score).toFixed(2)}. Paste the chopped roster below when ready.`,true);
     currentChoppedOwner=chopped.owner_name;
     $('rosterCard').classList.remove('hidden');
