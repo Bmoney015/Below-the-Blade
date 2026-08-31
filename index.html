@@ -1741,12 +1741,17 @@ async function loadLiveFinalSweat(){
   document.getElementById('sweatKicker').textContent=`🔴 WEEK ${state.current_week} LIVE · FINAL SWEAT`;
   setDashboardMode('live');
 
-  // Ignore untouched blank POC rows. In production, the commissioner will enter every surviving team.
-  const entered=(rawScores||[]).filter(r =>
-    Number(r.current_score)>0 ||
-    Number(r.starters_remaining)>0 ||
-    (r.remaining_players && String(r.remaining_players).trim())
-  );
+  // Final Sweat must only consider teams that are still alive entering this week.
+  // Old weekly_scores rows can remain in Supabase after an owner is chopped, so
+  // always exclude anyone already present in the persistent finalized-chop ledger.
+  const eliminatedOwners=new Set(Object.values(REPLAY_CHOPPED||{}));
+  const entered=(rawScores||[])
+    .filter(r=>!eliminatedOwners.has(r.owner_name))
+    .filter(r =>
+      Number(r.current_score)>0 ||
+      Number(r.starters_remaining)>0 ||
+      (r.remaining_players && String(r.remaining_players).trim())
+    );
 
   if(!entered.length){
     document.getElementById('sweatGrid').innerHTML='<div class="sweat-error">Week is LIVE, but no live scores have been entered yet.</div>';
