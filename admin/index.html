@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Below the Blade — Commissioner POC</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{--bg:#0d1a24;--panel:#152631;--line:#3e5360;--text:#f6f2ea;--muted:#9fb0bb;--gold:#f2c14e;--green:#5fc58d;--red:#ef6a5f}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
@@ -26,23 +26,25 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 .modal{width:min(600px,96vw);background:#152631;border:2px solid #a84740;border-radius:16px;padding:20px;box-shadow:0 20px 70px rgba(0,0,0,.45)}
 .modal h2{margin:0 0 8px;color:#ff8a82}.modal p{color:#d7e0e6;line-height:1.5}.modal strong{color:#fff}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.smallprint{font-size:10px;color:var(--muted);line-height:1.45}
+.test-banner{position:sticky;top:0;z-index:9998;margin:-28px -18px 20px;padding:10px 18px;background:#f2c14e;color:#17212a;font-weight:950;letter-spacing:.08em;text-align:center;border-bottom:2px solid #fff3c4}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow">COMMISSIONER CONTROL ROOM</div>
+  <div class="test-banner">🧪 TEST ENVIRONMENT · LOCAL SANDBOX · CANNOT WRITE TO PRODUCTION</div>
+  <div class="eyebrow">COMMISSIONER CONTROL ROOM · TEST</div>
   <h1>Below the Blade — Commissioner</h1>
   <div class="sub">Enter live scores, control Final Sweat, and finalize completed weeks.</div>
 
   <section class="card">
-    <b>Commissioner login</b>
+    <b>Test sandbox access</b>
     <div class="row" style="margin-top:12px">
       <div class="field"><label>EMAIL</label><input id="email" type="email" value="bron0623@gmail.com"></div>
       <div class="field"><label>PASSWORD</label><input id="password" type="password" placeholder="Commissioner password"></div>
       <button class="green" id="loginBtn">Log in</button>
       <button id="logoutBtn" class="hidden">Log out</button>
     </div>
-    <div class="status" id="authStatus">Logged out.</div>
+    <div class="status" id="authStatus">Local test mode — no production credentials are used.</div>
   </section>
 
   <section class="card hidden" id="adminCard">
@@ -81,10 +83,12 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
     <h2>Danger Zone</h2>
     <div class="smallprint warning">Recovery tools for scoring corrections and the eventual real-season launch.</div>
     <div class="actions">
+      <button id="restoreDemoBtn">↻ Restore Demo Test Data</button>
       <button class="red" id="undoWeekBtn">↶ Undo Last Finalization</button>
       <button class="red" id="resetSeasonBtn">⚠ Reset Season to Week 1</button>
     </div>
     <div class="smallprint" style="margin-top:10px">
+      <b>Restore Demo Test Data</b> resets this browser sandbox to the V41-style Week 7 demo. It never touches production.<br>
       <b>Undo Last Finalization</b> reopens only the most recently finalized week, removes that week's chop and frozen roster, and keeps its scores for correction.<br>
       <b>Reset Season</b> clears all season scores, chops and frozen rosters, disables mock history, and returns all 18 owners to Week 1 LIVE.
     </div>
@@ -128,6 +132,62 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 </div>
 
 <script>
+/* BELOW THE BLADE TEST SANDBOX
+   This branch intentionally NEVER connects to production Supabase.
+   Data is stored only in this browser's localStorage and is shared by / and /admin/. */
+const BTB_TEST_STORAGE_KEY='btb_test_sandbox_v1';
+const BTB_TEST_DEMO={
+  league_state:[{id:1,current_week:7,week_status:'LIVE',show_remaining_players:true,show_fab_efficiency:true,use_mock_history:true,updated_at:new Date().toISOString()}],
+  weekly_scores:[
+    {week:7,owner_name:'Contestant 17',current_score:112,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Goofy',current_score:112,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Blizzy',current_score:109,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Rambis',current_score:107,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Tony Squares',current_score:99,starters_remaining:1,remaining_players:'',excluded_from_sweat:false}
+  ],
+  finalized_chops:[
+    {week:1,owner_name:'Cooterdoodle',score:88},{week:2,owner_name:'Zakarian',score:77},{week:3,owner_name:'Contestant 18',score:82},
+    {week:4,owner_name:'Kitchen',score:103.9},{week:5,owner_name:'Nez',score:61},{week:6,owner_name:'Davis',score:109}
+  ],
+  chopped_rosters:[]
+};
+function btbClone(v){return JSON.parse(JSON.stringify(v));}
+function btbTestLoad(){
+  try{const x=JSON.parse(localStorage.getItem(BTB_TEST_STORAGE_KEY)||'null'); if(x&&x.league_state)return x;}catch(e){}
+  const d=btbClone(BTB_TEST_DEMO); localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(d)); return d;
+}
+function btbTestSave(db){localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(db));}
+function btbRestoreDemo(){localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(btbClone(BTB_TEST_DEMO))); location.reload();}
+class BTBTestQuery{
+  constructor(table){this.table=table;this.op='select';this.payload=null;this.filters=[];this.orderSpec=null;this.limitN=null;this.wantSingle=false;}
+  select(){this.op='select';return this} insert(p){this.op='insert';this.payload=Array.isArray(p)?p:[p];return this}
+  upsert(p){this.op='upsert';this.payload=Array.isArray(p)?p:[p];return this} update(p){this.op='update';this.payload=p;return this} delete(){this.op='delete';return this}
+  eq(k,v){this.filters.push(['eq',k,v]);return this} lt(k,v){this.filters.push(['lt',k,v]);return this} lte(k,v){this.filters.push(['lte',k,v]);return this} gte(k,v){this.filters.push(['gte',k,v]);return this}
+  order(k,o={}){this.orderSpec=[k,o.ascending!==false];return this} limit(n){this.limitN=n;return this} single(){this.wantSingle=true;return this}
+  _match(r){return this.filters.every(([op,k,v])=>op==='eq'?r[k]==v:op==='lt'?Number(r[k])<Number(v):op==='lte'?Number(r[k])<=Number(v):Number(r[k])>=Number(v));}
+  async exec(){
+    const db=btbTestLoad(); if(!db[this.table])db[this.table]=[]; let rows=db[this.table];
+    if(this.op==='select'){
+      let out=rows.filter(r=>this._match(r)).map(btbClone);
+      if(this.orderSpec){const [k,asc]=this.orderSpec;out.sort((a,b)=>{const av=a[k],bv=b[k];return (av>bv?1:av<bv?-1:0)*(asc?1:-1)})}
+      if(this.limitN!=null)out=out.slice(0,this.limitN);
+      return {data:this.wantSingle?(out[0]||null):out,error:null};
+    }
+    if(this.op==='delete'){db[this.table]=rows.filter(r=>!this._match(r));btbTestSave(db);return {data:null,error:null};}
+    if(this.op==='update'){rows.forEach(r=>{if(this._match(r))Object.assign(r,btbClone(this.payload))});btbTestSave(db);return {data:null,error:null};}
+    if(this.op==='insert'){db[this.table].push(...btbClone(this.payload));btbTestSave(db);return {data:this.payload,error:null};}
+    if(this.op==='upsert'){
+      const keys={weekly_scores:['week','owner_name'],finalized_chops:['week'],chopped_rosters:['week','owner_name','player_name'],league_state:['id']}[this.table]||['id'];
+      for(const item of this.payload){const i=db[this.table].findIndex(r=>keys.every(k=>r[k]==item[k])); if(i>=0)db[this.table][i]=Object.assign({},db[this.table][i],btbClone(item));else db[this.table].push(btbClone(item));}
+      btbTestSave(db);return {data:this.payload,error:null};
+    }
+    return {data:null,error:null};
+  }
+  then(resolve,reject){return this.exec().then(resolve,reject)}
+}
+function createBTBTestClient(){return {from:t=>new BTBTestQuery(t),auth:{getSession:async()=>({data:{session:{user:{email:'TEST SANDBOX'}}}}),signInWithPassword:async()=>({data:{user:{email:'TEST SANDBOX'}},error:null}),signOut:async()=>({error:null})}}}
+</script>
+<script>
 const ALL_OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Nez","Blizzy","Goofy","ChadCandles","Davis","Kitchen","Zakarian","Cooterdoodle","Lou","Contestant 16","Contestant 17","Contestant 18"];
 let ACTIVE_OWNERS=[...ALL_OWNERS];
 let sb=null;
@@ -153,10 +213,8 @@ function applyState(state){
   $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);$('showFabEfficiency').value=String(state.show_fab_efficiency !== false);
   const p=$('statePill');p.textContent=`WEEK ${state.current_week} · ${state.week_status}`;p.className='pill '+(state.week_status==='LIVE'?'live':'final');
 }
-const BTB_SUPABASE_URL='https://jrrsfvrystagxxuuayjt.supabase.co';
-const BTB_PUBLISHABLE_KEY='sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7';
 async function initClient(){
-  sb=supabase.createClient(BTB_SUPABASE_URL,BTB_PUBLISHABLE_KEY);
+  sb=createBTBTestClient();
   const {data:{session}}=await sb.auth.getSession();
   if(session)onLoggedIn(session.user);
 }
@@ -320,6 +378,7 @@ async function resetSeasonToWeek1(){
   }
 }
 
+$('restoreDemoBtn').addEventListener('click',()=>{if(confirm('Restore the local TEST sandbox to the demo season?'))btbRestoreDemo();});
 $('undoWeekBtn').addEventListener('click',undoLastFinalization);
 $('resetSeasonBtn').addEventListener('click',openResetModal);
 $('cancelResetBtn').addEventListener('click',closeResetModal);
