@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Below the Blade — Commissioner POC</title>
+<title>Below the Blade — Commissioner</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{--bg:#0d1a24;--panel:#152631;--line:#3e5360;--text:#f6f2ea;--muted:#9fb0bb;--gold:#f2c14e;--green:#5fc58d;--red:#ef6a5f}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
@@ -30,19 +31,19 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow">COMMISSIONER CONTROL ROOM</div>
+  <div class="eyebrow">COMMISSIONER CONTROL ROOM · TEST</div>
   <h1>Below the Blade — Commissioner</h1>
   <div class="sub">Enter live scores, control Final Sweat, and finalize completed weeks.</div>
 
   <section class="card">
-    <b>Commissioner login</b>
+    <b>Test sandbox access</b>
     <div class="row" style="margin-top:12px">
       <div class="field"><label>EMAIL</label><input id="email" type="email" value="bron0623@gmail.com"></div>
       <div class="field"><label>PASSWORD</label><input id="password" type="password" placeholder="Commissioner password"></div>
       <button class="green" id="loginBtn">Log in</button>
       <button id="logoutBtn" class="hidden">Log out</button>
     </div>
-    <div class="status" id="authStatus">Logged out.</div>
+    <div class="status" id="authStatus">Local test mode — no production credentials are used.</div>
   </section>
 
   <section class="card hidden" id="adminCard">
@@ -85,6 +86,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
       <button class="red" id="resetSeasonBtn">⚠ Reset Season to Week 1</button>
     </div>
     <div class="smallprint" style="margin-top:10px">
+      <b>Restore Demo Test Data</b> resets this browser sandbox to the V41-style Week 7 demo. It never touches production.<br>
       <b>Undo Last Finalization</b> reopens only the most recently finalized week, removes that week's chop and frozen roster, and keeps its scores for correction.<br>
       <b>Reset Season</b> clears all season scores, chops and frozen rosters, disables mock history, and returns all 18 owners to Week 1 LIVE.
     </div>
@@ -128,7 +130,9 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 </div>
 
 <script>
-const ALL_OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Nez","Blizzy","Goofy","ChadCandles","Davis","Kitchen","Zakarian","Cooterdoodle","Lou","Contestant 16","Contestant 17","Contestant 18"];
+const BTB_SUPABASE_URL='https://jrrsfvrystagxxuuayjt.supabase.co';
+const BTB_PUBLISHABLE_KEY='sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7';
+const ALL_OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Nez","Blizzy","Goofy","ChadCandles","Davis","Kitchen","Zakarian","Cooterdoodle","Lou & Zach","Tootsie","Shoe","Sam"];
 let ACTIVE_OWNERS=[...ALL_OWNERS];
 let sb=null;
 let currentChoppedOwner=null;
@@ -153,8 +157,6 @@ function applyState(state){
   $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);$('showFabEfficiency').value=String(state.show_fab_efficiency !== false);
   const p=$('statePill');p.textContent=`WEEK ${state.current_week} · ${state.week_status}`;p.className='pill '+(state.week_status==='LIVE'?'live':'final');
 }
-const BTB_SUPABASE_URL='https://jrrsfvrystagxxuuayjt.supabase.co';
-const BTB_PUBLISHABLE_KEY='sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7';
 async function initClient(){
   sb=supabase.createClient(BTB_SUPABASE_URL,BTB_PUBLISHABLE_KEY);
   const {data:{session}}=await sb.auth.getSession();
@@ -185,13 +187,20 @@ function rosterLines(raw){
   return String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
 }
 async function loadChoppedRoster(week){
-  const rows=collectRows().filter(r=>Number(r.current_score)>0);
-  if(!rows.length){
+  // The finalized_chops ledger is authoritative. Never re-decide the loser from
+  // score rows after a week has been finalized.
+  const {data:chopRows,error:chopErr}=await sb.from('finalized_chops').select('week,owner_name,score').eq('week',week);
+  if(chopErr){
+    $('rosterCard').classList.add('hidden');
+    currentChoppedOwner=null;
+    return setStatus('rosterStatus','Could not read finalized chop: '+chopErr.message,false);
+  }
+  const chopped=chopRows?.[0];
+  if(!chopped){
     $('rosterCard').classList.add('hidden');
     currentChoppedOwner=null;
     return;
   }
-  const chopped=[...rows].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
   currentChoppedOwner=chopped.owner_name;
   $('rosterCard').classList.remove('hidden');
   $('rosterLabel').textContent=`${chopped.owner_name.toUpperCase()} · WEEK ${week} CHOPPED ROSTER`;
@@ -337,7 +346,17 @@ $('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','
 $('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('finalizeBtn').addEventListener('click',async()=>{
   const week=Number($('weekNumber').value);
-  const rows=collectRows().filter(r=>Number(r.current_score)>0);
+  const scoreInputs=[...document.querySelectorAll('#scoreRows tr')].map(tr=>({
+    owner_name:tr.dataset.owner,
+    raw:tr.querySelector('.score').value.trim()
+  }));
+  const missing=scoreInputs.filter(x=>x.raw==='');
+  if(missing.length) return setStatus('saveStatus',`Enter a final score for every active owner before finalizing. Missing: ${missing.map(x=>x.owner_name).join(', ')}`,false);
+
+  // Recalculate the loser from the CURRENT full active field at the instant
+  // Finalize is clicked. LIVE safe/sweat classifications and exclude flags do
+  // not affect finalization. A legitimate 0.00 score is eligible to be chopped.
+  const rows=collectRows();
   if(!rows.length) return setStatus('saveStatus','Enter final scores before finalizing.',false);
   const chopped=[...rows].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
   const msg=`Finalize Week ${week}?\n\n${chopped.owner_name} will be recorded as the chopped owner at ${Number(chopped.current_score).toFixed(2)} points.\n\nMake sure these are FINAL scores.`;
