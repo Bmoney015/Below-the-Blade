@@ -26,9 +26,9 @@ header p{margin:0;color:#cbd5df;max-width:850px;font-size:17px} .wrap{width:min(
 .owner.chopped .mini{color:#817b74}
  .owner-body{padding:11px} .owner-name{font-size:18px;font-weight:900} .mini{font-size:11px;color:var(--muted);margin:4px 0 8px}
 .bar{height:6px;background:#e8e2d8;border-radius:10px;overflow:hidden} .bar span{display:block;height:100%;background:var(--green)} .danger .bar span{background:var(--red)} .watch .bar span{background:var(--gold)} .tag{font-size:9px;font-weight:950;letter-spacing:.08em;margin-top:8px}
-.econ{display:grid;grid-template-columns:repeat(4,1fr);gap:12px} .econ .panel{min-height:150px} .kicker{font-size:11px;color:#a87918;font-weight:950;letter-spacing:.1em;text-transform:uppercase} .metric{font-size:30px;font-weight:950;margin:6px 0}
+.econ{display:grid;grid-template-columns:repeat(4,1fr);gap:12px} .econ.corpse-week-one{grid-template-columns:repeat(2,minmax(0,1fr))} .econ .panel{min-height:150px} .kicker{font-size:11px;color:#a87918;font-weight:950;letter-spacing:.1em;text-transform:uppercase} .metric{font-size:30px;font-weight:950;margin:6px 0}
 .journey{display:grid;grid-template-columns:1fr 1fr;gap:14px} .route{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px} .node{padding:7px 10px;border-radius:999px;background:#e9e3d8;font-weight:800;font-size:12px} .arrow{color:#a87918;font-weight:950}
-.table{width:100%;border-collapse:collapse;font-size:13px} .table th,.table td{padding:11px;border-bottom:1px solid #e2dbcf;text-align:left} .table th{background:#172533;color:white}
+.table{width:100%;border-collapse:collapse;font-size:13px} .table th,.table td{padding:11px;border-bottom:1px solid #e2dbcf;text-align:left} .table th{background:#172533;color:white} .table tfoot td{font-weight:950;border-top:2px solid #f2c14e;background:#111f29}
 footer{text-align:center;color:#7b827f;font-size:12px;padding:20px}
 @media(max-width:900px){.grid,.journey{grid-template-columns:1fr}.owners{grid-template-columns:repeat(2,1fr)}.econ{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}}
 
@@ -596,6 +596,7 @@ select,input{
 .live-data-status{font-size:9px;color:#8fa1ad;margin-left:5px}
 .sweat-player-list{display:block;color:#b9c8d1;font-size:8px;margin-top:2px}
 .sweat-error{padding:12px;border:1px solid #74423e;border-radius:9px;color:#ef8a82;background:#291d20}
+
 
 
 .real-empty{margin:16px 0 28px;padding:20px;border:1px dashed #506578;border-radius:14px;background:#132331;color:#a9bac6}.real-empty b{display:block;color:#f7f4ed;font-size:16px;margin-bottom:4px}.real-season-hidden{display:none!important}
@@ -1730,18 +1731,25 @@ function renderRealSeasonSurvivalBoard(){
   const completedWeeks=Object.keys(REPLAY_CHOPPED).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);
   const latest=completedWeeks.length?completedWeeks.at(-1):0;
   const choppedByName={}; Object.entries(REPLAY_CHOPPED).forEach(([w,n])=>choppedByName[n]=+w);
+  const latestData=latest?(REPLAY_WEEKLY[String(latest)]||REPLAY_WEEKLY[latest]||{}):{};
+  const latestChopped=latest?REPLAY_CHOPPED[String(latest)]||REPLAY_CHOPPED[latest]:null;
+  const cutScore=(latestChopped && latestData[latestChopped]!==undefined)?Number(latestData[latestChopped]):null;
+  const survivorMargins=Object.entries(latestData).filter(([n])=>!choppedByName[n]).map(([,s])=>cutScore===null?0:Number(s)-cutScore).filter(Number.isFinite);
+  const maxMargin=survivorMargins.length?Math.max(...survivorMargins):0;
   document.querySelectorAll('.owner').forEach(card=>{
     if(REAL_SEASON_MODE) card.classList.remove('chopped');
     const name=card.querySelector('.owner-name')?.textContent.trim(); if(!name)return;
-    card.classList.remove('chopped','safe','danger','warn');
+    card.classList.remove('chopped','safe','danger','watch','warn');
     const mini=card.querySelector('.mini'),tag=card.querySelector('.tag'),bar=card.querySelector('.bar span');
     const cw=choppedByName[name];
     const ranks=[];
     completedWeeks.forEach(w=>{
       const d=REPLAY_WEEKLY[String(w)]||REPLAY_WEEKLY[w]||{};
       if(d[name]===undefined)return;
-      const ranked=Object.keys(d).sort((a,b)=>Number(d[b])-Number(d[a]));
-      const r=ranked.indexOf(name)+1; if(r>0)ranks.push(r);
+      const score=Number(d[name]);
+      // Competition rank: ties receive the same rank. Array/order never breaks ties.
+      const r=1+Object.values(d).filter(v=>Number(v)>score).length;
+      ranks.push(r);
     });
     if(cw){
       card.classList.add('chopped');
@@ -1757,14 +1765,101 @@ function renderRealSeasonSurvivalBoard(){
       if(bar) bar.style.width='0%';
       return;
     }
-    const lastScore=REPLAY_WEEKLY[String(latest)]?.[name] ?? REPLAY_WEEKLY[latest]?.[name];
+    const lastScore=latestData[name];
     const avg=ranks.length?ranks.reduce((a,b)=>a+b,0)/ranks.length:null;
+    const margin=(lastScore!==undefined && cutScore!==null)?Number(lastScore)-cutScore:null;
     if(mini) mini.innerHTML=lastScore!==undefined?`<b>${Number(lastScore).toFixed(1)}</b> W${latest} pts${avg!==null?` · avg rank ${avg.toFixed(1)}`:''}`:`Alive · no W${latest} score`;
-    if(tag) tag.textContent='ALIVE';
-    if(bar) bar.style.width=avg===null?'0%':`${Math.max(8,Math.min(100,100-(avg-1)*(92/17)))}%`;
+    if(margin!==null){
+      const ratio=maxMargin>0?Math.max(0,margin/maxMargin):0;
+      if(margin<=5 || ratio<.20) card.classList.add('danger');
+      else if(margin<=15 || ratio<.45) card.classList.add('watch');
+      else card.classList.add('safe');
+      if(tag) tag.textContent=`ALIVE · +${margin.toFixed(1)} ABOVE BLADE`;
+      if(bar) bar.style.width=`${margin<=0?0:Math.max(8,Math.min(100,12+88*ratio))}%`;
+    }else{
+      if(tag) tag.textContent='ALIVE'; if(bar)bar.style.width='0%';
+    }
   });
   const st=[...document.querySelectorAll('.section-title')].find(x=>x.querySelector('.kicker')?.textContent.trim().toLowerCase()==='survival board');
   const pill=st?.querySelector('.pill'); if(pill) pill.textContent=latest?`REAL RESULTS · THROUGH WEEK ${latest}`:'18 ALIVE · SEASON NOT STARTED';
+}
+
+function btbNormPlayer(v){return String(v||'').trim().toLowerCase().replace(/[’]/g,"'").replace(/\s+/g,' ')}
+async function renderRealSeasonWaiverAnalytics(){
+  const [runRes,txRes,rosterRes]=await Promise.all([
+    btbSupabase.from('waiver_runs').select('*').order('chop_week'),
+    btbSupabase.from('waiver_transactions').select('*').order('chop_week'),
+    btbSupabase.from('chopped_rosters').select('week,owner_name,player_name').order('week')
+  ]);
+  if(runRes.error||txRes.error||rosterRes.error){
+    console.warn('Could not load waiver analytics',runRes.error||txRes.error||rosterRes.error);return;
+  }
+  const runs=runRes.data||[], tx=txRes.data||[], rosters=rosterRes.data||[];
+  if(!runs.length)return;
+  const runWeeks=new Set(runs.map(r=>Number(r.chop_week)));
+  const rosterByWeek={}; rosters.forEach(r=>{const w=Number(r.week);(rosterByWeek[w]??=new Set()).add(btbNormPlayer(r.player_name));});
+  const chopValue={}; const corpseTx=[];
+  runs.forEach(r=>chopValue[Number(r.chop_week)]=0);
+  tx.forEach(t=>{const w=Number(t.chop_week);if(runWeeks.has(w) && rosterByWeek[w]?.has(btbNormPlayer(t.player_name))){chopValue[w]=(chopValue[w]||0)+Number(t.winning_bid||0);corpseTx.push(t);}});
+  const corpses=runs.map(r=>({week:Number(r.chop_week),owner:r.chopped_owner||REPLAY_CHOPPED[String(r.chop_week)]||'Unknown',value:Number(chopValue[Number(r.chop_week)]||0)}));
+  const most=[...corpses].sort((a,b)=>b.value-a.value)[0], cheap=[...corpses].sort((a,b)=>a.value-b.value)[0];
+  const avg=corpses.reduce((s,x)=>s+x.value,0)/Math.max(1,corpses.length);
+  const bite=[...corpseTx].sort((a,b)=>Number(b.winning_bid)-Number(a.winning_bid))[0];
+  const title=[...document.querySelectorAll('.section-title')].find(x=>x.querySelector('.kicker')?.textContent.trim().toLowerCase()==='chop economy');
+  const econ=title?.nextElementSibling;
+  if(title&&econ){
+    title.classList.remove('real-season-hidden');econ.classList.remove('real-season-hidden');
+    econ.classList.toggle('corpse-week-one',corpses.length===1);
+    if(corpses.length===1){
+      const only=corpses[0];
+      econ.innerHTML=`
+        <div class="panel"><div class="kicker">Corpse value</div><div class="metric">${money0(only?.value||0)}</div><b>${escHtml(only?.owner||'—')} · Week ${only?.week||'—'}</b><p class="sub">Winning FAB spent on players from the first chopped roster in its first Wednesday waiver run.</p></div>
+        <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid on a player released by the Week 1 corpse.</p></div>`;
+    }else{
+      econ.innerHTML=`
+        <div class="panel"><div class="kicker">Most valuable corpse</div><div class="metric">${money0(most?.value||0)}</div><b>${escHtml(most?.owner||'—')} · Week ${most?.week||'—'}</b><p class="sub">Winning FAB spent on players from that chopped roster in its first Wednesday waiver run.</p></div>
+        <div class="panel"><div class="kicker">Cheapest corpse</div><div class="metric">${money0(cheap?.value||0)}</div><b>${escHtml(cheap?.owner||'—')} · Week ${cheap?.week||'—'}</b><p class="sub">Unclaimed corpse players count as $0; later-week adds do not count.</p></div>
+        <div class="panel"><div class="kicker">Average corpse value</div><div class="metric">${money0(avg)}</div><b>${corpses.length} recorded corpses</b><p class="sub">Average market value created by the chop, measured by actual first-run winning bids.</p></div>
+        <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid so far on a player released by a chopped roster.</p></div>`;
+    }
+  }
+  const fab=document.getElementById('fabEfficiencyFeature');
+  const {data:stateRows}=await btbSupabase.from('league_state').select('show_fab_efficiency').eq('id',1);
+  const state=stateRows?.[0]||{};
+  if(!fab || state.show_fab_efficiency===false)return;
+  const eligible=tx.filter(t=>t.next_highest_bid!==null && t.next_highest_bid!==undefined && Number.isFinite(Number(t.next_highest_bid)) && Number.isFinite(Number(t.winning_bid)));
+  if(!eligible.length)return;
+  const ownerStats={}; let biggest=null;
+  eligible.forEach(t=>{
+    const win=Number(t.winning_bid), next=Number(t.next_highest_bid);
+    // If equal bids were resolved by priority, the winning amount was already the minimum needed.
+    const min=Math.min(win,next+1), excess=Math.max(0,win-min), owner=t.acquired_by||'Unknown';
+    const o=ownerStats[owner]??={spent:0,min:0,excess:0,snipes:0,count:0};o.spent+=win;o.min+=min;o.excess+=excess;o.count++;if(excess===0)o.snipes++;
+    if(!biggest || excess>biggest.excess)biggest={...t,excess,min};
+  });
+  const ownerRows=Object.entries(ownerStats).map(([owner,x])=>({owner,...x,eff:x.spent?x.min/x.spent:0})).sort((a,b)=>b.eff-a.eff||b.spent-a.spent);
+  const efficient=ownerRows[0], left=[...ownerRows].sort((a,b)=>b.excess-a.excess)[0];
+  // Best Snipe intentionally ignores tiny waiver bids. Rank meaningful wins by the
+  // smallest percentage paid above the minimum needed, then favor the larger market.
+  const snipeCandidates=eligible.map(t=>{
+    const win=Number(t.winning_bid), next=Number(t.next_highest_bid), min=Math.min(win,next+1), excess=Math.max(0,win-min);
+    return {...t,min,excess,overPct:min?excess/min:Infinity};
+  }).filter(t=>t.min>=25).sort((a,b)=>a.overPct-b.overPct||b.min-a.min);
+  const bestSnipe=snipeCandidates[0]||null;
+  fab.classList.remove('real-season-hidden');
+  const panels=fab.querySelector('.econ'); if(panels)panels.innerHTML=`
+    <div class="panel"><div class="kicker">Most efficient bidder</div><div class="metric">${Math.round((efficient?.eff||0)*100)}%</div><b>${escHtml(efficient?.owner||'—')}</b><p class="sub">${money0(efficient?.spent||0)} spent vs ${money0(efficient?.min||0)} needed.</p></div>
+    <div class="panel"><div class="kicker">Biggest overpay</div><div class="metric">${money0(biggest?.excess||0)}</div><b>${escHtml(biggest?.acquired_by||'—')} · ${escHtml(biggest?.player_name||'—')}</b><p class="sub">Winning bid ${money0(biggest?.winning_bid||0)} · next-highest ${money0(biggest?.next_highest_bid||0)}.</p></div>
+    <div class="panel"><div class="kicker">Best snipe</div><div class="metric">${bestSnipe?((bestSnipe.overPct*100).toFixed(bestSnipe.overPct<0.1?1:0)+'%'):'—'}</div><b>${bestSnipe?escHtml((bestSnipe.acquired_by||'—')+' · '+(bestSnipe.player_name||'—')):'No qualifying bids yet'}</b><p class="sub">${bestSnipe?`${money0(bestSnipe.winning_bid)} spent vs ${money0(bestSnipe.min)} needed.`:'Minimum needed must be at least $25.'}</p></div>
+    <div class="panel"><div class="kicker">FAB left on the table</div><div class="metric">${money0(left?.excess||0)}</div><b>${escHtml(left?.owner||'—')}</b><p class="sub">${money0(left?.spent||0)} spent vs ${money0(left?.min||0)} needed.</p></div>`;
+  const tbody=fab.querySelector('tbody'); if(tbody)tbody.innerHTML=ownerRows.map(x=>`<tr><td>${escHtml(x.owner)}</td><td>${money0(x.spent)}</td><td>${money0(x.min)}</td><td>${money0(x.excess)}</td><td><b>${Math.round(x.eff*100)}%</b></td></tr>`).join('');
+  const totalSpent=ownerRows.reduce((s,x)=>s+x.spent,0), totalMin=ownerRows.reduce((s,x)=>s+x.min,0), totalExcess=ownerRows.reduce((s,x)=>s+x.excess,0);
+  const overallEff=totalSpent?totalMin/totalSpent:0;
+  const table=fab.querySelector('table');
+  if(table){
+    let tfoot=table.querySelector('tfoot'); if(!tfoot){tfoot=document.createElement('tfoot');table.appendChild(tfoot);}
+    tfoot.innerHTML=`<tr><td>LEAGUE TOTAL</td><td>${money0(totalSpent)}</td><td>${money0(totalMin)}</td><td>${money0(totalExcess)}</td><td><b>${Math.round(overallEff*100)}%</b></td></tr>`;
+  }
 }
 
 function applyRealSeasonPresentation(){
@@ -1776,6 +1871,7 @@ function applyRealSeasonPresentation(){
   setSectionHiddenByKicker('Player journeys',true);
   setSectionHiddenByKicker('Season superlatives',true);
   renderRealSeasonSurvivalBoard();
+  renderRealSeasonWaiverAnalytics();
 
   const completed=Object.keys(REPLAY_CHOPPED).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);
   const maxWeek=completed.length?completed.at(-1):0;
