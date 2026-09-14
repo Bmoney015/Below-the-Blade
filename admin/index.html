@@ -28,6 +28,10 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.smallprint{font-size:10px;color:var(--muted);line-height:1.45}
 .test-banner{position:sticky;top:0;z-index:9998;margin:-28px -18px 20px;padding:10px 18px;background:#f2c14e;color:#17212a;font-weight:950;letter-spacing:.08em;text-align:center;border-bottom:2px solid #fff3c4}
 
+
+.ghost-grid{display:grid;grid-template-columns:44px minmax(220px,1.6fr) 150px;gap:8px;align-items:center;margin-top:8px}.ghost-grid .gh{font-size:9px;color:#d9b7ff;letter-spacing:.08em;text-transform:uppercase;font-weight:900}.ghost-slot{color:#9f95b0;font-weight:900;text-align:center}.ghost-grid select,.ghost-grid input{padding:9px 10px;width:100%}.ghost-total{margin-top:12px;background:#201b29;border:1px solid #645475;border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center}.ghost-total small{color:#a99bb8;text-transform:uppercase;letter-spacing:.07em}.ghost-total b{font-size:24px;color:#d9b7ff}.ghost-note{background:#211d2a!important;border-color:#5b5269!important;color:#cfc7da!important}
+@media(max-width:700px){.ghost-grid{grid-template-columns:32px 1fr 105px}}
+
 .waiver-grid{display:grid;grid-template-columns:minmax(220px,1.7fr) minmax(150px,1fr) 130px 150px 44px;gap:8px;align-items:end;margin-top:8px}
 .waiver-grid .wh{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;font-weight:900;padding:0 2px}
 .waiver-grid input,.waiver-grid select{padding:9px 10px}.waiver-remove{padding:9px 0!important;width:44px;background:#5a2b2a!important;border-color:#7c3c39!important}
@@ -148,6 +152,20 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
     </div>
     <div class="status" id="waiverStatus"></div>
   </section>
+
+  <section class="card hidden" id="ghostCard">
+    <div class="topline">
+      <div><b>👻 Graveyard · one-week-after lineup</b><div class="smallprint" id="ghostIntro">The prior week's chopped roster will load here automatically.</div></div>
+      <div id="ghostPill" class="pill">NOT SAVED</div>
+    </div>
+    <div class="note ghost-note" style="margin-top:10px"><b>Ghost Week rule:</b> choose 8 starters from the frozen chopped roster and enter each player's actual fantasy points from the following week. The site sums them and inserts the corpse into that week's real standings for entertainment only.</div>
+    <div class="ghost-grid" style="margin-top:12px"><div class="gh">Slot</div><div class="gh">Starter from corpse</div><div class="gh">Actual points</div></div>
+    <div id="ghostRows"></div>
+    <div class="ghost-total"><small>Ghost Score</small><b id="ghostTotal">0.00</b></div>
+    <div class="actions"><button class="green" id="saveGhostBtn">Save Ghost Week</button></div>
+    <div class="status" id="ghostStatus"></div>
+  </section>
+
 </div>
 
 <div class="modal-backdrop hidden" id="resetModal">
@@ -175,7 +193,7 @@ const BTB_TEST_DEMO={
     {week:7,owner_name:'Shoe',current_score:112,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
     {week:7,owner_name:'Goofy',current_score:112,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
     {week:7,owner_name:'Blizzy',current_score:109,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
-    {week:7,owner_name:'Rambis',current_score:107,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Rambus',current_score:107,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
     {week:7,owner_name:'Tony Squares',current_score:99,starters_remaining:1,remaining_players:'',excluded_from_sweat:false}
   ],
   finalized_chops:[
@@ -184,11 +202,12 @@ const BTB_TEST_DEMO={
   ],
   chopped_rosters:[],
   waiver_runs:[],
-  waiver_transactions:[]
+  waiver_transactions:[],
+  ghost_scores:[]
 };
 function btbClone(v){return JSON.parse(JSON.stringify(v));}
 function btbTestLoad(){
-  try{const x=JSON.parse(localStorage.getItem(BTB_TEST_STORAGE_KEY)||'null'); if(x&&x.league_state)return x;}catch(e){}
+  try{const x=JSON.parse(localStorage.getItem(BTB_TEST_STORAGE_KEY)||'null'); if(x&&x.league_state){const fix=o=>{if(o&&o.owner_name==='Rambis')o.owner_name='Rambus';if(o&&o.chopped_owner==='Rambis')o.chopped_owner='Rambus';if(o&&o.acquired_by==='Rambis')o.acquired_by='Rambus'};Object.values(x).forEach(v=>Array.isArray(v)&&v.forEach(fix));return x;}}catch(e){}
   const d=btbClone(BTB_TEST_DEMO); localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(d)); return d;
 }
 function btbTestSave(db){localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(db));}
@@ -212,7 +231,7 @@ class BTBTestQuery{
     if(this.op==='update'){rows.forEach(r=>{if(this._match(r))Object.assign(r,btbClone(this.payload))});btbTestSave(db);return {data:null,error:null};}
     if(this.op==='insert'){db[this.table].push(...btbClone(this.payload));btbTestSave(db);return {data:this.payload,error:null};}
     if(this.op==='upsert'){
-      const keys={weekly_scores:['week','owner_name'],finalized_chops:['week'],chopped_rosters:['week','owner_name','player_name'],waiver_runs:['chop_week'],waiver_transactions:['chop_week','player_name'],league_state:['id']}[this.table]||['id'];
+      const keys={weekly_scores:['week','owner_name'],finalized_chops:['week'],chopped_rosters:['week','owner_name','player_name'],waiver_runs:['chop_week'],waiver_transactions:['chop_week','player_name'],ghost_scores:['ghost_week','owner_name','player_name'],league_state:['id']}[this.table]||['id'];
       for(const item of this.payload){const i=db[this.table].findIndex(r=>keys.every(k=>r[k]==item[k])); if(i>=0)db[this.table][i]=Object.assign({},db[this.table][i],btbClone(item));else db[this.table].push(btbClone(item));}
       btbTestSave(db);return {data:this.payload,error:null};
     }
@@ -223,7 +242,7 @@ class BTBTestQuery{
 function createBTBTestClient(){return {from:t=>new BTBTestQuery(t),auth:{getSession:async()=>({data:{session:{user:{email:'TEST SANDBOX'}}}}),signInWithPassword:async()=>({data:{user:{email:'TEST SANDBOX'}},error:null}),signOut:async()=>({error:null})}}}
 </script>
 <script>
-const ALL_OWNERS=["Cupps","Tony Squares","Zak","Rambis","Steph","Pete","Nez","Blizzy","Goofy","ChadCandles","Davis","Kitchen","Zakarian","Cooterdoodle","Lou & Zach","Tootsie","Shoe","Sam"];
+const ALL_OWNERS=["Cupps","Tony Squares","Zak","Rambus","Steph","Pete","Nez","Blizzy","Goofy","ChadCandles","Davis","Kitchen","Zakarian","Cooterdoodle","Lou & Zach","Tootsie","Shoe","Sam"];
 let ACTIVE_OWNERS=[...ALL_OWNERS];
 let sb=null;
 let currentChoppedOwner=null;
@@ -273,6 +292,7 @@ async function loadStateAndScores(){
   if(e2)return setStatus('saveStatus','Could not read weekly_scores: '+e2.message,false);
   renderRows(scores||[]);setStatus('saveStatus',`Loaded Week ${week}. ${scores?.length||0} saved score rows found.`,true);
   if(state.week_status==='COMPLETED'){ await loadChoppedRoster(week); await loadWaiverRun(week); } else {$('rosterCard').classList.add('hidden');$('waiverCard').classList.add('hidden');currentChoppedOwner=null;}
+  await loadGhostWeek(week);
 }
 
 function rosterLines(raw){
@@ -324,6 +344,38 @@ async function saveChoppedRoster(){
   updateWaiverPreview();
 }
 
+
+
+let currentGhostOwner=null,currentGhostChopWeek=null;
+function ghostOptions(players,selected=''){return ['<option value="">Select player</option>',...players.map(p=>`<option value="${p.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${p===selected?'selected':''}>${p}</option>`)].join('')}
+function updateGhostTotal(){let t=0;document.querySelectorAll('.ghost-score').forEach(x=>{const n=Number(x.value);if(Number.isFinite(n))t+=n});$('ghostTotal').textContent=t.toFixed(2)}
+async function loadGhostWeek(currentWeek){
+  const card=$('ghostCard'); if(currentWeek<=1){card.classList.add('hidden');return;}
+  const chopWeek=currentWeek-1;
+  const {data:chops}=await sb.from('finalized_chops').select('*').eq('week',chopWeek);
+  const chop=chops?.[0]; if(!chop){card.classList.add('hidden');return;}
+  const {data:roster}=await sb.from('chopped_rosters').select('player_name').eq('week',chopWeek).eq('owner_name',chop.owner_name).order('player_name');
+  const players=(roster||[]).map(r=>r.player_name); if(!players.length){card.classList.remove('hidden');currentGhostOwner=chop.owner_name;currentGhostChopWeek=chopWeek;$('ghostIntro').textContent=`${chop.owner_name} was chopped Week ${chopWeek}, but the frozen roster must be saved before Ghost Week can be entered.`;$('ghostRows').innerHTML='';$('ghostPill').textContent='ROSTER NEEDED';setStatus('ghostStatus','Save the chopped roster first.',false);return;}
+  currentGhostOwner=chop.owner_name; currentGhostChopWeek=chopWeek; card.classList.remove('hidden');
+  $('ghostIntro').textContent=`${chop.owner_name} was chopped Week ${chopWeek}. Enter the 8 starters and scores for Ghost Week ${currentWeek}.`;
+  const {data:saved}=await sb.from('ghost_scores').select('*').eq('ghost_week',currentWeek).eq('owner_name',chop.owner_name);
+  const bySlot=[...(saved||[])].sort((a,b)=>Number(a.slot)-Number(b.slot));
+  $('ghostRows').innerHTML=Array.from({length:8},(_,i)=>{const r=bySlot[i]||{};const preset=r.player_name||players[i]||'';return `<div class="ghost-grid"><div class="ghost-slot">${i+1}</div><div><select class="ghost-player">${ghostOptions(players,preset)}</select></div><div><input class="ghost-score" type="number" step="0.01" placeholder="0.00" value="${r.points??''}"></div></div>`}).join('');
+  document.querySelectorAll('.ghost-score').forEach(x=>x.addEventListener('input',updateGhostTotal)); updateGhostTotal();
+  $('ghostPill').textContent=saved?.length===8?'8 STARTERS SAVED':'NOT SAVED'; $('ghostPill').className='pill '+(saved?.length===8?'final':'');
+  setStatus('ghostStatus',saved?.length===8?`Loaded ${chop.owner_name}'s saved Ghost Week ${currentWeek}.`:'Choose the 8-player lineup and enter actual points.',true);
+}
+async function saveGhostWeek(){
+  const ghostWeek=Number($('weekNumber').value); if(!currentGhostOwner||!currentGhostChopWeek)return setStatus('ghostStatus','No prior-week corpse is available.',false);
+  const rows=[...document.querySelectorAll('#ghostRows .ghost-grid')].map((r,i)=>({slot:i+1,player_name:r.querySelector('.ghost-player')?.value||'',raw:r.querySelector('.ghost-score')?.value?.trim()||''}));
+  if(rows.length!==8||rows.some(r=>!r.player_name))return setStatus('ghostStatus','Choose all 8 starters.',false);
+  const names=rows.map(r=>r.player_name); if(new Set(names).size!==8)return setStatus('ghostStatus','Each starter can be used only once.',false);
+  if(rows.some(r=>r.raw===''||!Number.isFinite(Number(r.raw))))return setStatus('ghostStatus','Enter an actual point total for all 8 starters. Zero is allowed.',false);
+  let x=await sb.from('ghost_scores').delete().eq('ghost_week',ghostWeek).eq('owner_name',currentGhostOwner); if(x.error)return setStatus('ghostStatus',x.error.message,false);
+  const payload=rows.map(r=>({chop_week:currentGhostChopWeek,ghost_week:ghostWeek,owner_name:currentGhostOwner,slot:r.slot,player_name:r.player_name,points:Number(r.raw),updated_at:new Date().toISOString()}));
+  x=await sb.from('ghost_scores').insert(payload); if(x.error)return setStatus('ghostStatus',x.error.message,false);
+  $('ghostPill').textContent='8 STARTERS SAVED';$('ghostPill').className='pill final';updateGhostTotal();setStatus('ghostStatus',`Saved ${currentGhostOwner} · Ghost Week ${ghostWeek} at ${$('ghostTotal').textContent} points.`,true);
+}
 
 function waiverOwnerOptions(selected=''){
   return ALL_OWNERS.filter(x=>x!==currentChoppedOwner).map(x=>`<option value="${x.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${x===selected?'selected':''}>${x}</option>`).join('');
@@ -574,6 +626,7 @@ $('finalizeBtn').addEventListener('click',async()=>{
 $('saveRosterBtn').addEventListener('click',saveChoppedRoster);
 $('addWaiverRowBtn').addEventListener('click',()=>addWaiverRow());
 $('saveWaiverRunBtn').addEventListener('click',saveWaiverRun);
+$('saveGhostBtn').addEventListener('click',saveGhostWeek);
 renderRows();initClient();
 </script>
 </body>
