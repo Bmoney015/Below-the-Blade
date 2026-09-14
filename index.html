@@ -600,6 +600,7 @@ select,input{
 
 
 .real-empty{margin:16px 0 28px;padding:20px;border:1px dashed #506578;border-radius:14px;background:#132331;color:#a9bac6}.real-empty b{display:block;color:#f7f4ed;font-size:16px;margin-bottom:4px}.real-season-hidden{display:none!important}
+.sweat-projected{display:inline-block;margin-left:8px;padding:3px 7px;border:1px solid #7a6732;border-radius:999px;background:#272719;color:#f2c14e;font-size:10px;font-weight:900;white-space:nowrap}
 </style>
 
 <style>
@@ -660,7 +661,7 @@ select,input{
       <p id="sweatIntro">Loading live-week data…</p>
     </div>
     <div class="sweat-cut">
-      <small>CURRENT CHOP LINE</small>
+      <small id="sweatLineLabel">CURRENT CHOP LINE</small>
       <strong id="sweatChopLine">—</strong>
       <span id="sweatSafeCount">Loading…</span>
     </div>
@@ -2085,7 +2086,10 @@ async function loadLiveFinalSweat(){
   sweat.sort((a,b)=>Number(b.current_score)-Number(a.current_score));
   const safeCount=entered.length-sweat.length;
 
-  document.getElementById('sweatChopLine').textContent=fmtScore(currentBlade);
+  const survivalLine=guaranteedFloor;
+  const lineLabel=document.getElementById('sweatLineLabel');
+  document.getElementById('sweatChopLine').textContent=fmtScore(survivalLine===null?currentBlade:survivalLine);
+  if(lineLabel) lineLabel.textContent=survivalLine===null?'CURRENT BLADE':'SURVIVAL LINE';
   document.getElementById('sweatSafeCount').textContent=
     safeCount>0 ? `${safeCount} mathematically safe · ${sweat.length} still sweating`
                 : `${sweat.length} teams still unresolved`;
@@ -2154,11 +2158,18 @@ async function loadLiveFinalSweat(){
           ${bountyTarget?'<span class="target-mini">🎯 BOUNTY</span>':''}
         </div>
         <div class="sweat-score">${fmtScore(score)} pts
-          <span>${onBlade?'ON THE BLADE':`+${fmtScore(margin)} above blade`}</span>
+          <span>${survivalLine!==null
+            ? (Math.abs(score-survivalLine)<0.005
+                ? (remaining===0?'CLUBHOUSE LINE':'AT SURVIVAL LINE')
+                : score<survivalLine
+                  ? `${fmtScore(survivalLine-score)} TO SAFETY`
+                  : `${fmtScore(score-survivalLine)} ABOVE SURVIVAL LINE`)
+            : (onBlade?'ON THE BLADE':`+${fmtScore(margin)} above blade`)}</span>
         </div>
         <div class="sweat-context">
           Current live rank: <b>#${r._rank} / ${entered.length}</b>
           ${bountyTarget?` · bounty chop would add <b>$${bounty}</b>`:''}
+          ${(r.projected_total!==null && r.projected_total!==undefined && r.projected_total!=='' && Number.isFinite(Number(r.projected_total)))?`<span class="sweat-projected">PROJECTED ${fmtScore(r.projected_total)}</span>`:''}
         </div>
       </div>
       <div class="sweat-left"><b>${remaining}</b><span>${remaining===1?'starter':'starters'} left${names}</span></div>
