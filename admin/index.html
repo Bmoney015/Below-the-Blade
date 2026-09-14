@@ -68,11 +68,11 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
       <button id="loadBtn">Load saved data</button>
     </div>
 
-    <div class="note" style="margin-top:12px"><b>Override:</b> “Exclude from Sweat” lets you omit an owner you know is mathematically safe without deleting their score.</div>
+    <div class="note" style="margin-top:12px"><b>Projection:</b> Optional manual projected final. It appears only for teams currently shown in Final Sweat and never affects chop/safety logic.<br><b>Override:</b> “Exclude from Sweat” lets you omit an owner you know is mathematically safe without deleting their score.</div>
 
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>Owner</th><th>Current Score</th><th>Starters Left</th><th>Exclude</th><th>Remaining Players / Note</th></tr></thead>
+        <thead><tr><th>Owner</th><th>Current Score</th><th>Projected Total</th><th>Starters Left</th><th>Exclude</th><th>Remaining Players / Note</th></tr></thead>
         <tbody id="scoreRows"></tbody>
       </table>
     </div>
@@ -237,6 +237,7 @@ function renderRows(data=[]){
     return `<tr data-owner="${name}">
       <td class="owner">${name}</td>
       <td><input class="score" type="number" step="0.01" value="${r.current_score ?? ''}" placeholder="0.00"></td>
+      <td><input class="projected" type="number" step="0.01" value="${r.projected_total ?? ''}" placeholder="optional"></td>
       <td><input class="left" type="number" min="0" max="9" value="${r.starters_remaining ?? 0}"></td>
       <td class="check"><input class="exclude" type="checkbox" ${r.excluded_from_sweat?'checked':''}></td>
       <td><input class="players" value="${r.remaining_players ?? ''}" placeholder="e.g. Lamar Jackson"></td>
@@ -403,6 +404,7 @@ function collectRows(){
   const week=Number($('weekNumber').value);
   return [...document.querySelectorAll('#scoreRows tr')].map(tr=>({
     week,owner_name:tr.dataset.owner,current_score:Number(tr.querySelector('.score').value||0),
+    projected_total:tr.querySelector('.projected').value.trim()===''?null:Number(tr.querySelector('.projected').value),
     starters_remaining:Number(tr.querySelector('.left').value||0),remaining_players:tr.querySelector('.players').value.trim()||null,
     excluded_from_sweat:tr.querySelector('.exclude').checked,updated_at:new Date().toISOString()
   }));

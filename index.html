@@ -600,6 +600,8 @@ select,input{
 
 
 .real-empty{margin:16px 0 28px;padding:20px;border:1px dashed #506578;border-radius:14px;background:#132331;color:#a9bac6}.real-empty b{display:block;color:#f7f4ed;font-size:16px;margin-bottom:4px}.real-season-hidden{display:none!important}
+.btb-test-banner{position:sticky;top:0;z-index:99999;padding:8px 14px;background:#f2c14e;color:#17212a;text-align:center;font:900 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;border-bottom:2px solid #fff3c4}
+.sweat-projected{display:inline-block;margin-left:8px;padding:3px 7px;border:1px solid #7a6732;border-radius:999px;background:#272719;color:#f2c14e;font-size:10px;font-weight:900;white-space:nowrap}
 </style>
 
 <style>
@@ -622,7 +624,7 @@ select,input{
 @media(max-width:900px){.draft-summary{grid-template-columns:repeat(2,1fr)}.draft-controls{grid-template-columns:1fr 1fr}.draft-head{display:block}.draft-year-pill{display:inline-block;margin-top:8px}}
 </style>
 </head>
-<body>
+<body><div class="btb-test-banner">🧪 BELOW THE BLADE · TEST ENVIRONMENT · LOCAL SANDBOX · CANNOT WRITE TO PRODUCTION</div>
 <header>
   <div class="eyebrow">18 ENTER · ONE SURVIVES</div>
   <h1>🪓 Below the Blade</h1>
@@ -660,7 +662,7 @@ select,input{
       <p id="sweatIntro">Loading live-week data…</p>
     </div>
     <div class="sweat-cut">
-      <small>CURRENT CHOP LINE</small>
+      <small id="sweatLineLabel">CURRENT CHOP LINE</small>
       <strong id="sweatChopLine">—</strong>
       <span id="sweatSafeCount">Loading…</span>
     </div>
@@ -1683,9 +1685,64 @@ function renderFactions(){
 }
 
 
-const BTB_SUPABASE_URL='https://jrrsfvrystagxxuuayjt.supabase.co';
-const BTB_SUPABASE_KEY='sb_publishable_CPKxYnlc7bQtwQBQ1krqiw_nGtYY4w7';
-const btbSupabase=window.supabase.createClient(BTB_SUPABASE_URL,BTB_SUPABASE_KEY);
+/* BELOW THE BLADE TEST SANDBOX
+   This branch intentionally NEVER connects to production Supabase.
+   Data is stored only in this browser's localStorage and is shared by / and /admin/. */
+const BTB_TEST_STORAGE_KEY='btb_test_sandbox_v1';
+const BTB_TEST_DEMO={
+  league_state:[{id:1,current_week:7,week_status:'LIVE',show_remaining_players:true,show_fab_efficiency:true,use_mock_history:true,updated_at:new Date().toISOString()}],
+  weekly_scores:[
+    {week:7,owner_name:'Shoe',current_score:112,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Goofy',current_score:112,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Blizzy',current_score:109,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Rambis',current_score:107,starters_remaining:1,remaining_players:'',excluded_from_sweat:false},
+    {week:7,owner_name:'Tony Squares',current_score:99,starters_remaining:1,remaining_players:'',excluded_from_sweat:false}
+  ],
+  finalized_chops:[
+    {week:1,owner_name:'Cooterdoodle',score:88},{week:2,owner_name:'Zakarian',score:77},{week:3,owner_name:'Sam',score:82},
+    {week:4,owner_name:'Kitchen',score:103.9},{week:5,owner_name:'Nez',score:61},{week:6,owner_name:'Davis',score:109}
+  ],
+  chopped_rosters:[],
+  waiver_runs:[],
+  waiver_transactions:[]
+};
+function btbClone(v){return JSON.parse(JSON.stringify(v));}
+function btbTestLoad(){
+  try{const x=JSON.parse(localStorage.getItem(BTB_TEST_STORAGE_KEY)||'null'); if(x&&x.league_state)return x;}catch(e){}
+  const d=btbClone(BTB_TEST_DEMO); localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(d)); return d;
+}
+function btbTestSave(db){localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(db));}
+function btbRestoreDemo(){localStorage.setItem(BTB_TEST_STORAGE_KEY,JSON.stringify(btbClone(BTB_TEST_DEMO))); location.reload();}
+class BTBTestQuery{
+  constructor(table){this.table=table;this.op='select';this.payload=null;this.filters=[];this.orderSpec=null;this.limitN=null;this.wantSingle=false;}
+  select(){this.op='select';return this} insert(p){this.op='insert';this.payload=Array.isArray(p)?p:[p];return this}
+  upsert(p){this.op='upsert';this.payload=Array.isArray(p)?p:[p];return this} update(p){this.op='update';this.payload=p;return this} delete(){this.op='delete';return this}
+  eq(k,v){this.filters.push(['eq',k,v]);return this} lt(k,v){this.filters.push(['lt',k,v]);return this} lte(k,v){this.filters.push(['lte',k,v]);return this} gte(k,v){this.filters.push(['gte',k,v]);return this}
+  order(k,o={}){this.orderSpec=[k,o.ascending!==false];return this} limit(n){this.limitN=n;return this} single(){this.wantSingle=true;return this}
+  _match(r){return this.filters.every(([op,k,v])=>op==='eq'?r[k]==v:op==='lt'?Number(r[k])<Number(v):op==='lte'?Number(r[k])<=Number(v):Number(r[k])>=Number(v));}
+  async exec(){
+    const db=btbTestLoad(); if(!db[this.table])db[this.table]=[]; let rows=db[this.table];
+    if(this.op==='select'){
+      let out=rows.filter(r=>this._match(r)).map(btbClone);
+      if(this.orderSpec){const [k,asc]=this.orderSpec;out.sort((a,b)=>{const av=a[k],bv=b[k];return (av>bv?1:av<bv?-1:0)*(asc?1:-1)})}
+      if(this.limitN!=null)out=out.slice(0,this.limitN);
+      return {data:this.wantSingle?(out[0]||null):out,error:null};
+    }
+    if(this.op==='delete'){db[this.table]=rows.filter(r=>!this._match(r));btbTestSave(db);return {data:null,error:null};}
+    if(this.op==='update'){rows.forEach(r=>{if(this._match(r))Object.assign(r,btbClone(this.payload))});btbTestSave(db);return {data:null,error:null};}
+    if(this.op==='insert'){db[this.table].push(...btbClone(this.payload));btbTestSave(db);return {data:this.payload,error:null};}
+    if(this.op==='upsert'){
+      const keys={weekly_scores:['week','owner_name'],finalized_chops:['week'],chopped_rosters:['week','owner_name','player_name'],waiver_runs:['chop_week'],waiver_transactions:['chop_week','player_name'],league_state:['id']}[this.table]||['id'];
+      for(const item of this.payload){const i=db[this.table].findIndex(r=>keys.every(k=>r[k]==item[k])); if(i>=0)db[this.table][i]=Object.assign({},db[this.table][i],btbClone(item));else db[this.table].push(btbClone(item));}
+      btbTestSave(db);return {data:this.payload,error:null};
+    }
+    return {data:null,error:null};
+  }
+  then(resolve,reject){return this.exec().then(resolve,reject)}
+}
+function createBTBTestClient(){return {from:t=>new BTBTestQuery(t),auth:{getSession:async()=>({data:{session:{user:{email:'TEST SANDBOX'}}}}),signInWithPassword:async()=>({data:{user:{email:'TEST SANDBOX'}},error:null}),signOut:async()=>({error:null})}}}
+/* TEST client replaces production Supabase on this branch. */
+const btbSupabase=createBTBTestClient();
 
 const SWEAT_FACTION={
   "Pete":["SHOW","show"],"Tony Squares":["SHOW","show"],"Lou & Zach":["SHOW","show"],
@@ -2085,7 +2142,10 @@ async function loadLiveFinalSweat(){
   sweat.sort((a,b)=>Number(b.current_score)-Number(a.current_score));
   const safeCount=entered.length-sweat.length;
 
-  document.getElementById('sweatChopLine').textContent=fmtScore(currentBlade);
+  const survivalLine=guaranteedFloor;
+  const lineLabel=document.getElementById('sweatLineLabel');
+  document.getElementById('sweatChopLine').textContent=fmtScore(survivalLine===null?currentBlade:survivalLine);
+  if(lineLabel) lineLabel.textContent=survivalLine===null?'CURRENT BLADE':'SURVIVAL LINE';
   document.getElementById('sweatSafeCount').textContent=
     safeCount>0 ? `${safeCount} mathematically safe · ${sweat.length} still sweating`
                 : `${sweat.length} teams still unresolved`;
@@ -2154,11 +2214,18 @@ async function loadLiveFinalSweat(){
           ${bountyTarget?'<span class="target-mini">🎯 BOUNTY</span>':''}
         </div>
         <div class="sweat-score">${fmtScore(score)} pts
-          <span>${onBlade?'ON THE BLADE':`+${fmtScore(margin)} above blade`}</span>
+          <span>${survivalLine!==null
+            ? (Math.abs(score-survivalLine)<0.005
+                ? (remaining===0?'CLUBHOUSE LINE':'AT SURVIVAL LINE')
+                : score<survivalLine
+                  ? `${fmtScore(survivalLine-score)} TO SAFETY`
+                  : `${fmtScore(score-survivalLine)} ABOVE SURVIVAL LINE`)
+            : (onBlade?'ON THE BLADE':`+${fmtScore(margin)} above blade`)}</span>
         </div>
         <div class="sweat-context">
           Current live rank: <b>#${r._rank} / ${entered.length}</b>
           ${bountyTarget?` · bounty chop would add <b>$${bounty}</b>`:''}
+          ${(r.projected_total!==null && r.projected_total!==undefined && r.projected_total!=='' && Number.isFinite(Number(r.projected_total)))?`<span class="sweat-projected">PROJECTED ${fmtScore(r.projected_total)}</span>`:''}
         </div>
       </div>
       <div class="sweat-left"><b>${remaining}</b><span>${remaining===1?'starter':'starters'} left${names}</span></div>
