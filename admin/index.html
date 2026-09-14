@@ -19,7 +19,7 @@ button.primary{background:var(--gold);color:#17212a;border-color:var(--gold)}but
 .status{font-size:12px;margin-top:9px;color:var(--muted)}.status.ok{color:var(--green)}.status.bad{color:var(--red)}.topline{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
 .pill{display:inline-flex;padding:5px 8px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:900}.pill.live{color:#fff;background:#8f2925;border-color:#c8554c}.pill.final{color:#1b2b20;background:var(--green);border-color:var(--green)}
 .hidden{display:none!important}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px 7px;border-bottom:1px solid #324652;text-align:left}
-th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}td input{padding:8px 9px}td.owner{font-weight:850;white-space:nowrap}td.check{text-align:center}td.check input{width:auto;transform:scale(1.1)}
+th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}td input{padding:8px 9px}td.owner{font-weight:850;white-space:nowrap}.elim-divider td{padding-top:18px;padding-bottom:7px;border-bottom:1px solid #59646b;color:#9aa6ad;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.elim-row{opacity:.58;background:rgba(255,255,255,.018)}.elim-row td{padding-top:9px;padding-bottom:9px}.elim-meta{color:#aeb8bd;font-size:11px;font-weight:700}.elim-score{color:#89959b;font-size:11px}td.check{text-align:center}td.check input{width:auto;transform:scale(1.1)}
 .note{padding:10px 12px;background:#1e2b24;border:1px solid #59633e;border-radius:9px;color:#d9d6a4;font-size:11px;line-height:1.45}
 .danger-zone{border-color:#8c3b37;background:#20191b}.danger-zone h2{margin:0 0 4px;color:#ff8a82}.danger-zone .warning{color:#ffc0bb}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}
@@ -84,7 +84,9 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
     <div class="actions">
       <button class="green" id="saveLiveBtn">Save as LIVE Week</button>
       <button class="primary" id="saveOnlyBtn">Save Scores Only</button>
+      <button id="resetLiveFieldsBtn">Reset Live Entry Fields</button>
       <button class="red" id="finalizeBtn">Finalize Week</button>
+      <button class="green hidden" id="startNextWeekBtn">Start Next Week →</button>
     </div>
     <div class="status" id="saveStatus"></div>
   </section>
@@ -110,7 +112,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
     <div class="topline">
       <div>
         <b>Chopped roster</b>
-        <div class="smallprint">Paste the roster exactly once after a week is finalized. One player per line is ideal. This frozen roster powers corpse value, Grim Reaper, and player-journey matching.</div>
+        <div class="smallprint">This unlocks only after a chop is official. Paste the dead team’s roster once; it stays permanently tied to that elimination week and powers Cemetery, Ghost Week, corpse value, Grim Reaper, and player-journey matching.</div>
       </div>
       <div id="rosterPill" class="pill final">NO ROSTER SAVED</div>
     </div>
@@ -246,12 +248,14 @@ const ALL_OWNERS=["Cupps","Tony Squares","Zak","Rambus","Steph","Pete","Nez","Bl
 let ACTIVE_OWNERS=[...ALL_OWNERS];
 let sb=null;
 let currentChoppedOwner=null;
+let currentChoppedWeek=null;
+let ELIMINATED_OWNERS=[];
 const $=id=>document.getElementById(id);
 
 function setStatus(id,msg,ok=null){const el=$(id);el.textContent=msg;el.classList.remove('ok','bad');if(ok===true)el.classList.add('ok');if(ok===false)el.classList.add('bad')}
 function renderRows(data=[]){
   const map=Object.fromEntries(data.map(r=>[r.owner_name,r]));
-  $('scoreRows').innerHTML=ACTIVE_OWNERS.map(name=>{
+  const activeHtml=ACTIVE_OWNERS.map(name=>{
     const r=map[name]||{};
     return `<tr data-owner="${name}">
       <td class="owner">${name}</td>
@@ -262,11 +266,19 @@ function renderRows(data=[]){
       <td><input class="players" value="${r.remaining_players ?? ''}" placeholder="e.g. Lamar Jackson"></td>
     </tr>`;
   }).join('');
+  const eliminatedHtml=ELIMINATED_OWNERS.length ? `<tr class="elim-divider"><td colspan="6">☠ Eliminated · ${ELIMINATED_OWNERS.length} dead · ${ACTIVE_OWNERS.length} alive</td></tr>` + ELIMINATED_OWNERS.map(r=>`<tr class="elim-row"><td class="owner">${r.owner_name}</td><td class="elim-meta">Chopped W${r.week}</td><td class="elim-score">${Number(r.score||0).toFixed(2)}</td><td colspan="3" class="elim-meta">No live-week entry · frozen</td></tr>`).join('') : '';
+  $('scoreRows').innerHTML=activeHtml+eliminatedHtml;
 }
 function applyState(state){
   if(!state)return;
   $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);$('showFabEfficiency').value=String(state.show_fab_efficiency !== false);
   const p=$('statePill');p.textContent=`WEEK ${state.current_week} · ${state.week_status}`;p.className='pill '+(state.week_status==='LIVE'?'live':'final');
+  const nextBtn=$('startNextWeekBtn');
+  if(nextBtn){
+    const canAdvance=state.week_status==='COMPLETED' && Number(state.current_week)<17;
+    nextBtn.classList.toggle('hidden',!canAdvance);
+    if(canAdvance) nextBtn.textContent=`Start Week ${Number(state.current_week)+1} →`;
+  }
 }
 async function initClient(){
   sb=createBTBTestClient();
@@ -283,15 +295,27 @@ async function loadStateAndScores(){
   if(e1)return setStatus('saveStatus','Could not read league_state: '+e1.message,false);
   applyState(state);
   const week=Number(state.current_week);
-  const {data:priorChops,error:chopReadErr}=await sb.from('finalized_chops').select('week,owner_name').lt('week',week);
+  const {data:priorChops,error:chopReadErr}=await sb.from('finalized_chops').select('week,owner_name,score').lt('week',week);
   if(chopReadErr)return setStatus('saveStatus','Could not read chop history: '+chopReadErr.message,false);
   const alreadyOut=new Set((priorChops||[]).map(r=>r.owner_name));
   ACTIVE_OWNERS=ALL_OWNERS.filter(name=>!alreadyOut.has(name));
+  ELIMINATED_OWNERS=[...(priorChops||[])].sort((a,b)=>Number(a.week)-Number(b.week));
 
   const {data:scores,error:e2}=await sb.from('weekly_scores').select('*').eq('week',week).order('owner_name');
   if(e2)return setStatus('saveStatus','Could not read weekly_scores: '+e2.message,false);
   renderRows(scores||[]);setStatus('saveStatus',`Loaded Week ${week}. ${scores?.length||0} saved score rows found.`,true);
-  if(state.week_status==='COMPLETED'){ await loadChoppedRoster(week); await loadWaiverRun(week); } else {$('rosterCard').classList.add('hidden');$('waiverCard').classList.add('hidden');currentChoppedOwner=null;}
+  // Corpse tools are tied to the latest FINALIZED chop, not whichever live week
+  // happens to be open in Admin. This keeps one canonical frozen roster forever.
+  const {data:latestChops,error:latestChopErr}=await sb.from('finalized_chops').select('week,owner_name,score').lte('week',week).order('week',{ascending:false}).limit(1);
+  if(latestChopErr)return setStatus('saveStatus','Could not read latest finalized chop: '+latestChopErr.message,false);
+  if(latestChops?.length){
+    await loadChoppedRoster(Number(latestChops[0].week));
+    await loadWaiverRun(Number(latestChops[0].week));
+  }else{
+    // No official chop exists yet, so there is intentionally no corpse-roster
+    // entry UI. This prevents jumping the gun while a live week is still moving.
+    $('rosterCard').classList.add('hidden');$('waiverCard').classList.add('hidden');currentChoppedOwner=null;currentChoppedWeek=null;
+  }
   await loadGhostWeek(week);
 }
 
@@ -305,32 +329,48 @@ async function loadChoppedRoster(week){
   if(chopErr){
     $('rosterCard').classList.add('hidden');
     $('waiverCard').classList.add('hidden');
-    currentChoppedOwner=null;
+    currentChoppedOwner=null;currentChoppedWeek=null;
     return setStatus('rosterStatus','Could not read finalized chop: '+chopErr.message,false);
   }
   const chopped=chopRows?.[0];
   if(!chopped){
     $('rosterCard').classList.add('hidden');
     $('waiverCard').classList.add('hidden');
-    currentChoppedOwner=null;
+    currentChoppedOwner=null;currentChoppedWeek=null;
     return;
   }
   currentChoppedOwner=chopped.owner_name;
+  currentChoppedWeek=Number(chopped.week);
   $('rosterCard').classList.remove('hidden');
   $('rosterLabel').textContent=`${chopped.owner_name.toUpperCase()} · WEEK ${week} CHOPPED ROSTER`;
-  const {data,error}=await sb.from('chopped_rosters').select('player_name').eq('week',week).eq('owner_name',chopped.owner_name).order('player_name');
+  let {data,error}=await sb.from('chopped_rosters').select('player_name').eq('week',week).eq('owner_name',chopped.owner_name).order('player_name');
   if(error){
     $('choppedRoster').value='';
     $('rosterPill').textContent='SETUP NEEDED';
     return setStatus('rosterStatus','Chopped-roster storage is not ready yet. Run the included Supabase migration once.',false);
   }
+  // TEST-SANDBOX repair for the earlier bug that could save a corpse under the
+  // currently-open week instead of its actual chop week. Only repair when the
+  // canonical roster is empty and an obvious misplaced copy exists.
+  const openWeek=Number($('weekNumber').value);
+  if(!(data||[]).length && openWeek!==week){
+    const {data:misplaced}=await sb.from('chopped_rosters').select('player_name').eq('week',openWeek).eq('owner_name',chopped.owner_name).order('player_name');
+    if(misplaced?.length){
+      const payload=misplaced.map(r=>({week,owner_name:chopped.owner_name,player_name:r.player_name,updated_at:new Date().toISOString()}));
+      const ins=await sb.from('chopped_rosters').insert(payload);
+      if(!ins.error){
+        await sb.from('chopped_rosters').delete().eq('week',openWeek).eq('owner_name',chopped.owner_name);
+        data=misplaced;
+      }
+    }
+  }
   $('choppedRoster').value=(data||[]).map(x=>x.player_name).join('\n');
-  $('rosterPill').textContent=data?.length ? `${data.length} PLAYERS SAVED` : 'NO ROSTER SAVED';
-  setStatus('rosterStatus',data?.length ? `Loaded ${data.length} saved players.` : 'Paste this chopped roster when ready.',true);
+  $('rosterPill').textContent=data?.length ? `${data.length} PLAYERS · FROZEN W${week}` : `NO ROSTER · W${week}`;
+  setStatus('rosterStatus',data?.length ? `Canonical corpse: ${chopped.owner_name} · Week ${week}. This roster powers Cemetery, Ghost Week and corpse/FAB matching.` : `Paste ${chopped.owner_name}'s Week ${week} chopped roster once, then save it here.`,true);
 }
 async function saveChoppedRoster(){
-  const week=Number($('weekNumber').value);
-  if(!currentChoppedOwner) return setStatus('rosterStatus','Finalize/load the week first so the chopped owner can be identified.',false);
+  const week=Number(currentChoppedWeek);
+  if(!currentChoppedOwner || !Number.isFinite(week)) return setStatus('rosterStatus','No finalized corpse is loaded.',false);
   const players=[...new Set(rosterLines($('choppedRoster').value))];
   if(!players.length) return setStatus('rosterStatus','Paste at least one player before saving.',false);
   setStatus('rosterStatus','Saving roster...');
@@ -339,8 +379,8 @@ async function saveChoppedRoster(){
   const payload=players.map(player_name=>({week,owner_name:currentChoppedOwner,player_name,updated_at:new Date().toISOString()}));
   const {error}=await sb.from('chopped_rosters').insert(payload);
   if(error) return setStatus('rosterStatus',error.message,false);
-  $('rosterPill').textContent=`${players.length} PLAYERS SAVED`;
-  setStatus('rosterStatus',`Saved ${players.length} players for ${currentChoppedOwner} · Week ${week}.`,true);
+  $('rosterPill').textContent=`${players.length} PLAYERS · FROZEN W${week}`;
+  setStatus('rosterStatus',`Saved canonical corpse roster: ${currentChoppedOwner} · Week ${week} · ${players.length} players.`,true);
   updateWaiverPreview();
 }
 
@@ -360,7 +400,8 @@ async function loadGhostWeek(currentWeek){
   $('ghostIntro').textContent=`${chop.owner_name} was chopped Week ${chopWeek}. Enter the 8 starters and scores for Ghost Week ${currentWeek}.`;
   const {data:saved}=await sb.from('ghost_scores').select('*').eq('ghost_week',currentWeek).eq('owner_name',chop.owner_name);
   const bySlot=[...(saved||[])].sort((a,b)=>Number(a.slot)-Number(b.slot));
-  $('ghostRows').innerHTML=Array.from({length:8},(_,i)=>{const r=bySlot[i]||{};const preset=r.player_name||players[i]||'';return `<div class="ghost-grid"><div class="ghost-slot">${i+1}</div><div><select class="ghost-player">${ghostOptions(players,preset)}</select></div><div><input class="ghost-score" type="number" step="0.01" placeholder="0.00" value="${r.points??''}"></div></div>`}).join('');
+  const ghostLabels=['QB','RB','RB','WR','WR','TE','FLEX','FLEX'];
+  $('ghostRows').innerHTML=Array.from({length:8},(_,i)=>{const r=bySlot[i]||{};const preset=r.player_name||players[i]||'';return `<div class="ghost-grid"><div class="ghost-slot">${ghostLabels[i]}</div><div><select class="ghost-player">${ghostOptions(players,preset)}</select></div><div><input class="ghost-score" type="number" step="0.01" placeholder="0.00" value="${r.points??''}"></div></div>`}).join('');
   document.querySelectorAll('.ghost-score').forEach(x=>x.addEventListener('input',updateGhostTotal)); updateGhostTotal();
   $('ghostPill').textContent=saved?.length===8?'8 STARTERS SAVED':'NOT SAVED'; $('ghostPill').className='pill '+(saved?.length===8?'final':'');
   setStatus('ghostStatus',saved?.length===8?`Loaded ${chop.owner_name}'s saved Ghost Week ${currentWeek}.`:'Choose the 8-player lineup and enter actual points.',true);
@@ -429,7 +470,7 @@ async function loadWaiverRun(week){
   updateWaiverPreview();
 }
 async function saveWaiverRun(){
-  const week=Number($('weekNumber').value); if(!currentChoppedOwner)return setStatus('waiverStatus','Finalize the week first.',false);
+  const week=Number(currentChoppedWeek); if(!currentChoppedOwner||!Number.isFinite(week))return setStatus('waiverStatus','No finalized corpse is loaded.',false);
   const rows=collectWaiverRows(); const seen=new Set();
   for(const r of rows){
     if(!r.player_name)return setStatus('waiverStatus','Every transaction needs a player name.',false);
@@ -452,9 +493,23 @@ async function saveWaiverRun(){
   setStatus('waiverStatus',`Saved ${rows.length} successful claims. Week ${week} corpse value = $${Math.round(corpseValue).toLocaleString()}.`,true);
 }
 
+function resetLiveEntryFields(){
+  const week=Number($('weekNumber').value);
+  const ok=confirm(`Reset only Week ${week} LIVE entry fields?\n\nThis clears Current Score, Projected Total, Starters Left, Exclude and Remaining Players/Note in the on-screen grid.\n\nIt does NOT touch finalized weeks, chops, corpse rosters, FAB/waivers, Ghost Week, Cemetery, Draft data or historical analytics.`);
+  if(!ok)return;
+  document.querySelectorAll('#scoreRows tr[data-owner]').forEach(tr=>{
+    tr.querySelector('.score').value='';
+    tr.querySelector('.projected').value='';
+    tr.querySelector('.left').value='0';
+    tr.querySelector('.exclude').checked=false;
+    tr.querySelector('.players').value='';
+  });
+  setStatus('saveStatus',`Week ${week} live-entry fields cleared on screen. Nothing has been deleted from saved history. Use Save Scores Only / Save as LIVE Week if you want these cleared fields saved.`,true);
+}
+
 function collectRows(){
   const week=Number($('weekNumber').value);
-  return [...document.querySelectorAll('#scoreRows tr')].map(tr=>({
+  return [...document.querySelectorAll('#scoreRows tr[data-owner]')].map(tr=>({
     week,owner_name:tr.dataset.owner,current_score:Number(tr.querySelector('.score').value||0),
     projected_total:tr.querySelector('.projected').value.trim()===''?null:Number(tr.querySelector('.projected').value),
     starters_remaining:Number(tr.querySelector('.left').value||0),remaining_players:tr.querySelector('.players').value.trim()||null,
@@ -466,6 +521,42 @@ async function saveState(status){
   const week=Number($('weekNumber').value);
   const {error}=await sb.from('league_state').update({current_week:week,week_status:status,show_remaining_players:$('showPlayers').value==='true',show_fab_efficiency:$('showFabEfficiency').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
   if(error)throw error;applyState({current_week:week,week_status:status});
+}
+
+async function startNextWeek(){
+  const currentWeek=Number($('weekNumber').value);
+  const nextWeek=currentWeek+1;
+  if($('weekStatus').value!=='COMPLETED') return setStatus('saveStatus',`Week ${currentWeek} must be finalized before starting Week ${nextWeek}.`,false);
+  if(nextWeek>17) return setStatus('saveStatus','There is no next scoring week to start.',false);
+
+  const {data:chops,error:chopErr}=await sb.from('finalized_chops').select('week,owner_name,score').eq('week',currentWeek);
+  if(chopErr) return setStatus('saveStatus',chopErr.message,false);
+  if(!chops?.length) return setStatus('saveStatus',`Week ${currentWeek} does not have an official finalized chop yet.`,false);
+
+  const survivorCount=ALL_OWNERS.length-(await sb.from('finalized_chops').select('week,owner_name,score').lte('week',currentWeek)).data.length;
+  const ok=confirm(
+    `Start Week ${nextWeek}?\n\n`+
+    `This opens a fresh LIVE scoring week for ${survivorCount} surviving teams.\n\n`+
+    `Current Score, Projected Total, Starters Left, Exclude and Remaining Players/Note will start blank/reset for Week ${nextWeek}.\n\n`+
+    `Week ${currentWeek} finalized results, corpse roster, waiver/FAB data, Graveyard data and all prior history will remain unchanged.`
+  );
+  if(!ok)return;
+
+  try{
+    setStatus('saveStatus',`Starting Week ${nextWeek}...`);
+    // A new week is intentionally fresh. Remove only any pre-existing score-entry
+    // rows for the target week (useful in TEST after old sandbox experiments).
+    let r=await sb.from('weekly_scores').delete().eq('week',nextWeek);
+    if(r.error)throw r.error;
+    r=await sb.from('league_state').update({
+      current_week:nextWeek,
+      week_status:'LIVE',
+      updated_at:new Date().toISOString()
+    }).eq('id',1);
+    if(r.error)throw r.error;
+    await loadStateAndScores();
+    setStatus('saveStatus',`Week ${nextWeek} is LIVE. Fresh entry fields are ready for the surviving field. Week ${currentWeek} history was preserved.`,true);
+  }catch(e){setStatus('saveStatus',e.message,false)}
 }
 
 async function undoLastFinalization(){
@@ -581,9 +672,11 @@ $('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();
 $('loadBtn').addEventListener('click',loadStateAndScores);
 $('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
+$('resetLiveFieldsBtn').addEventListener('click',resetLiveEntryFields);
+$('startNextWeekBtn').addEventListener('click',startNextWeek);
 $('finalizeBtn').addEventListener('click',async()=>{
   const week=Number($('weekNumber').value);
-  const scoreInputs=[...document.querySelectorAll('#scoreRows tr')].map(tr=>({
+  const scoreInputs=[...document.querySelectorAll('#scoreRows tr[data-owner]')].map(tr=>({
     owner_name:tr.dataset.owner,
     raw:tr.querySelector('.score').value.trim()
   }));
@@ -600,7 +693,7 @@ $('finalizeBtn').addEventListener('click',async()=>{
   if(!confirm(msg)) return;
   try{
     setStatus('saveStatus','Finalizing...');
-    document.querySelectorAll('#scoreRows tr').forEach(tr=>{
+    document.querySelectorAll('#scoreRows tr[data-owner]').forEach(tr=>{
       tr.querySelector('.left').value=0;
       tr.querySelector('.players').value='';
     });
@@ -615,11 +708,12 @@ $('finalizeBtn').addEventListener('click',async()=>{
     if(chopErr) return setStatus('saveStatus',`Week finalized, but chop-history save failed: ${chopErr.message}`,false);
 
     setStatus('saveStatus',`Week ${week} finalized · ${chopped.owner_name} chopped at ${Number(chopped.current_score).toFixed(2)}. Paste the chopped roster below when ready.`,true);
+    // Finalization creates the corpse. The finalized_chops ledger is the source
+    // of truth, so load the roster tools from that exact week instead of
+    // constructing an editable corpse from the live-score form.
     currentChoppedOwner=chopped.owner_name;
-    $('rosterCard').classList.remove('hidden');
-    $('rosterLabel').textContent=`${chopped.owner_name.toUpperCase()} · WEEK ${week} CHOPPED ROSTER`;
-    $('choppedRoster').value='';
-    $('rosterPill').textContent='NO ROSTER SAVED';
+    currentChoppedWeek=week;
+    await loadChoppedRoster(week);
     await loadWaiverRun(week);
   }catch(e){setStatus('saveStatus',e.message,false)}
 });
