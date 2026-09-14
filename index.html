@@ -1,12 +1,5 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
-<meta name="theme-color" content="#0d1a24">
-
 <title>Below the Blade</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -263,6 +256,17 @@ h1,h2,h3,h4,.owner-name,.bounty-name,.fc-name{color:var(--v17-text)!important}
 /* Section separation comes from spacing/borders, not extra background colors */
 section{border-color:var(--v17-border)}
 .section-head{border-color:var(--v17-border)!important}
+
+
+/* V64 TEST — GRAVEYARD */
+.grave-shell{background:linear-gradient(180deg,#171724 0%,#111821 100%);border:1px solid #554c69;border-radius:16px;padding:20px;box-shadow:inset 0 0 80px rgba(93,72,118,.08)}
+.grave-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px}.grave-head h2{font-size:34px;margin:3px 0 5px}.grave-head .sub{max-width:760px;color:#b9b3c7}.grave-badge{border:1px solid #7d6f94;color:#d8c9ef;background:#211d2d;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:950;white-space:nowrap}
+.grave-disclaimer{border:1px solid #5b5269;background:#211d2a;color:#cfc7da;border-radius:11px;padding:10px 12px;font-size:10px;line-height:1.45;margin:12px 0}.grave-controls{display:flex;gap:9px;align-items:end;flex-wrap:wrap;margin:12px 0}.grave-controls label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#aaa0bb}.grave-controls select{display:block;margin-top:4px;background:#0f1b25;border:1px solid #4b435a;color:#f7f2fb;border-radius:9px;padding:9px 10px}
+.grave-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0 16px}.grave-stat{background:#151c27;border:1px solid #4b435a;border-radius:11px;padding:11px}.grave-stat small{display:block;color:#9f95b0;font-size:9px;text-transform:uppercase;letter-spacing:.07em}.grave-stat b{display:block;font-size:22px;margin-top:3px}.grave-stat.ghost b{color:#d9b7ff}.grave-punch{color:#f2c14e!important}
+.grave-list{display:flex;flex-direction:column;gap:7px}.grave-row{display:grid;grid-template-columns:42px 46px minmax(150px,1fr) minmax(180px,3fr) 86px 160px;gap:10px;align-items:center;background:#15232d;border:1px solid #344957;border-radius:11px;padding:9px 11px;position:relative;overflow:hidden}.grave-row.ghost{background:linear-gradient(90deg,#2d2138,#1b2530);border-color:#8b6fac;box-shadow:0 0 0 1px rgba(200,164,240,.13),0 0 20px rgba(117,78,155,.12)}.grave-row.blade{border-color:#7f3e42}.grave-rank{font-weight:950;color:#8ea1ad;text-align:center}.grave-row.ghost .grave-rank{color:#dec6fa}.grave-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #566875}.grave-row.ghost .grave-avatar{border-color:#b58ae8}.grave-owner{font-weight:950}.grave-owner small{display:block;color:#a596b8;font-size:9px;margin-top:2px}.grave-track{height:13px;background:#253642;border-radius:999px;overflow:hidden}.grave-fill{height:100%;border-radius:999px;background:#657887}.grave-row.ghost .grave-fill{background:linear-gradient(90deg,#9a71c7,#d8b4ff)}.grave-score{text-align:right;font-size:16px;font-weight:950}.grave-tag{text-align:right;font-size:9px;font-weight:950;letter-spacing:.06em;color:#9fb0bb}.grave-row.ghost .grave-tag{color:#e0c9ff}.grave-row.blade .grave-tag{color:#ef6a5f}.grave-empty{padding:28px;border:1px dashed #5a506a;border-radius:13px;text-align:center;color:#aaa0bb;background:#171822}
+.grave-agony{margin-top:18px;border-top:1px solid #493d59;padding-top:16px}.agony-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin-bottom:10px}.agony-head h3{margin:2px 0 0;font-size:24px}.agony-kicker{font-size:9px;font-weight:950;letter-spacing:.09em;color:#d9b7ff;text-transform:uppercase}.agony-compare{display:grid;grid-template-columns:1fr 1fr .8fr;gap:9px;margin-bottom:12px}.agony-card{background:#171b25;border:1px solid #51465f;border-radius:11px;padding:12px}.agony-card small{display:block;color:#9f95b0;font-size:9px;letter-spacing:.07em;text-transform:uppercase}.agony-card b{display:block;font-size:24px;margin-top:3px}.agony-card.ghost b{color:#d9b7ff}.agony-card.delta b{color:#f2c14e}.agony-lineup{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.agony-player{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#151f29;border:1px solid #344957;border-radius:10px;padding:9px 11px}.agony-player strong{font-size:13px}.agony-player .subline{margin-top:2px;font-size:9px;color:#9fb0bb}.agony-player .claim{color:#f2c14e;font-weight:900}.agony-player .pts{font-size:16px;font-weight:950;color:#f6f2ea}.agony-punch{margin-top:11px;background:#2a2415;border:1px solid #6a5923;border-radius:10px;padding:10px 12px;color:#f2c14e;font-weight:950;text-align:center;letter-spacing:.03em}.agony-muted{color:#9f95b0;font-size:10px}
+.grave-archive{margin-top:22px;border-top:1px solid #493d59;padding-top:17px}.grave-archive-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:11px}.grave-archive-head h3{margin:2px 0 0;font-size:24px}.grave-archive-actions{display:flex;gap:7px;flex-wrap:wrap}.grave-archive-btn{background:#211d2a;color:#e4d8ef;border:1px solid #5a4c68;border-radius:9px;padding:8px 11px;font-weight:900;font-size:10px;cursor:pointer}.grave-archive-btn:hover{border-color:#8f72ad}.fallen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.fallen-card{background:#151b24;border:1px solid #443b50;border-radius:12px;overflow:hidden}.fallen-card summary{list-style:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 12px;cursor:pointer}.fallen-card summary::-webkit-details-marker{display:none}.fallen-week{font-size:10px;font-weight:950;letter-spacing:.08em;color:#d9b7ff}.fallen-owner{font-weight:950;font-size:14px}.fallen-toggle{font-size:9px;color:#9f95b0;font-weight:900;letter-spacing:.05em}.fallen-card[open] .fallen-toggle::after{content:'HIDE ROSTER'}.fallen-card:not([open]) .fallen-toggle::after{content:'VIEW ROSTER'}.fallen-roster{border-top:1px solid #3b3346;padding:10px 12px 12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px}.fallen-player{font-size:11px;color:#d8d0df;padding:3px 0;border-bottom:1px solid rgba(90,76,104,.24)}.fallen-empty{padding:16px;border:1px dashed #5a506a;border-radius:11px;color:#aaa0bb;text-align:center;background:#171822}.fallen-count{font-size:9px;color:#9f95b0;margin-top:2px}@media(max-width:760px){.fallen-grid{grid-template-columns:1fr}.fallen-roster{grid-template-columns:1fr}}
+@media(max-width:850px){.grave-summary{grid-template-columns:1fr 1fr}.grave-row{grid-template-columns:30px 38px 1fr 70px}.grave-track,.grave-tag{grid-column:3/5}.grave-avatar{width:36px;height:36px}.grave-score{font-size:14px}}
 
 /* Keep semantic colors vivid against navy */
 .replay-fill.secure{background:linear-gradient(90deg,#438d55,#69bd7c)!important}
@@ -607,7 +611,10 @@ select,input{
 
 
 .real-empty{margin:16px 0 28px;padding:20px;border:1px dashed #506578;border-radius:14px;background:#132331;color:#a9bac6}.real-empty b{display:block;color:#f7f4ed;font-size:16px;margin-bottom:4px}.real-season-hidden{display:none!important}
+.btb-test-banner{position:sticky;top:0;z-index:99999;padding:8px 14px;background:#f2c14e;color:#17212a;text-align:center;font:900 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;border-bottom:2px solid #fff3c4}
 .sweat-projected{display:inline-block;margin-left:8px;padding:3px 7px;border:1px solid #7a6732;border-radius:999px;background:#272719;color:#f2c14e;font-size:10px;font-weight:900;white-space:nowrap}
+
+@media(max-width:760px){.agony-compare{grid-template-columns:1fr}.agony-lineup{grid-template-columns:1fr}.agony-head{align-items:flex-start;flex-direction:column}}
 </style>
 
 <style>
@@ -644,6 +651,7 @@ select,input{
 <nav class="mock-nav">
   <button class="mock-nav-btn active" data-page="dashboard">Dashboard</button>
   <button class="mock-nav-btn" data-page="replay">Season Replay</button>
+  <button class="mock-nav-btn" data-page="graveyard">Graveyard</button>
 <button class="mock-nav-btn" data-page="factions">Faction Battle</button>
 <button class="mock-nav-btn" data-page="draft">Draft</button>
 </nav>
@@ -1066,6 +1074,25 @@ select,input{
 </main>
 
 
+
+
+<main class="wrap mock-page" id="page-graveyard">
+  <section class="grave-shell">
+    <div class="grave-head">
+      <div><div class="kicker">👻 ONE WEEK AFTER THE BLADE</div><h2>The Graveyard</h2><p class="sub">What happened if last week's dead roster got one more Sunday? Each corpse gets exactly one Ghost Week.</p></div>
+      <div class="grave-badge" id="graveBadge">GHOST WEEK</div>
+    </div>
+    <div class="grave-disclaimer"><b>For entertainment only.</b> Ghost Week freezes the roster that existed when the team was chopped, then compares a commissioner-selected 8-player lineup against the next week's real field. It does not model waiver claims, duplicated players, or alternate roster decisions.</div>
+    <div class="grave-controls"><label>Ghost Week<select id="graveWeekSelect"></select></label></div>
+    <div class="grave-summary" id="graveSummary"></div>
+    <div class="grave-list" id="graveList"><div class="grave-empty">No Ghost Week has been entered yet.</div></div>
+    <div class="grave-agony" id="graveAgony" hidden></div>
+    <div class="grave-archive" id="graveArchive">
+      <div class="grave-archive-head"><div><div class="agony-kicker">⚰ FALLEN TEAMS</div><h3>The Cemetery</h3><div class="fallen-count" id="fallenCount">No corpses yet.</div></div><div class="grave-archive-actions"><button class="grave-archive-btn" id="fallenExpandAll" type="button">Expand all rosters</button><button class="grave-archive-btn" id="fallenCollapseAll" type="button">Collapse all</button></div></div>
+      <div class="fallen-grid" id="fallenGrid"><div class="fallen-empty">The cemetery is empty.</div></div>
+    </div>
+  </section>
+</main>
 
 <main class="wrap mock-page" id="page-factions"><section class="panel faction-shell"><div class="faction-title-row"><div><div class="kicker">Five paths in · one trophy out</div><h2>Faction Battle</h2><p class="sub">Which corner of the league is performing best? Rate stats normalize the unequal group sizes.</p></div><div class="faction-week"><small>THROUGH</small><strong>WEEK 6</strong></div></div><div class="faction-cards" id="factionCards"></div><div class="faction-table-wrap"><table class="faction-table"><thead><tr id="factionHead"></tr></thead><tbody id="factionBody"></tbody></table></div><div class="faction-footer"><div class="kicker">TALE OF THE TAPE</div><div id="factionVerdict"></div></div>
 <div class="faction-rosters">
@@ -1545,12 +1572,114 @@ function filteredDraftV51(){const faction=document.getElementById('draftFactionF
 function renderDraftTableV51(){const rows=filteredDraftV51();document.getElementById('draftCount').textContent=`${rows.length} selection${rows.length===1?'':'s'} shown`;document.getElementById('draftTableBody').innerHTML=rows.map(p=>`<tr><td><b>${p.overallPick}</b></td><td>${p.roundSlot}</td><td><b>${draftEsc(draftOwner(p))}</b><br><small>${draftEsc(draftFaction(p))}</small></td><td>${draftEsc(p.team)}</td><td><b>${draftEsc(p.player)}</b>${p.status?` <small style="color:#ef6a5f">${draftEsc(p.status)}</small>`:''}</td><td><span class="pos-pill ${p.position}">${p.position}</span></td><td>${p.positionLabel}</td></tr>`).join('')}
 function exportDraftTableV51(){const rows=filteredDraftV51();const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';const csv=['Pick,Round,Owner,Faction,Draft Team,Player,Position,Positional Pick',...rows.map(p=>[p.overallPick,p.roundSlot,draftOwner(p),draftFaction(p),p.team,p.player,p.position,p.positionLabel].map(q).join(','))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Below_the_Blade_2026_Draft_Picks.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 
+
+function graveFmt(n){return Number(n||0).toFixed(2)}
+function graveEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function renderFallenArchive(){
+  const grid=document.getElementById('fallenGrid'), count=document.getElementById('fallenCount');
+  if(!grid)return;
+  const [{data:chops},{data:rosters}]=await Promise.all([
+    btbSupabase.from('finalized_chops').select('*').order('week'),
+    btbSupabase.from('chopped_rosters').select('*').order('week')
+  ]);
+  const finalized=(chops||[]).slice().sort((a,b)=>Number(a.week)-Number(b.week));
+  if(!finalized.length){grid.innerHTML='<div class="fallen-empty">The cemetery is empty. Finalized chopped teams will appear here with their frozen rosters.</div>';if(count)count.textContent='No corpses yet.';return;}
+  const rosterRows=rosters||[];
+  if(count)count.textContent=`${finalized.length} fallen team${finalized.length===1?'':'s'} · rosters frozen at elimination`;
+  grid.innerHTML=finalized.map(ch=>{
+    const week=Number(ch.week), owner=String(ch.owner_name||'Unknown');
+    const players=rosterRows.filter(r=>Number(r.week)===week && r.owner_name===owner).map(r=>String(r.player_name||'').trim()).filter(Boolean);
+    const roster=players.length?players.map(p=>`<div class="fallen-player">${graveEsc(p)}</div>`).join(''):'<div class="fallen-player">Roster not saved yet.</div>';
+    return `<details class="fallen-card"><summary><span class="fallen-week">W${week}</span><span><span class="fallen-owner">${graveEsc(owner)}</span><span class="fallen-count">${players.length?`${players.length} players`:'Roster pending'}</span></span><span class="fallen-toggle"></span></summary><div class="fallen-roster">${roster}</div></details>`;
+  }).join('');
+}
+async function renderGraveyard(){
+  const sel=document.getElementById('graveWeekSelect'), list=document.getElementById('graveList'), summary=document.getElementById('graveSummary'), agony=document.getElementById('graveAgony');
+  if(!sel||!list||!summary)return;
+  if(agony){agony.hidden=true;agony.innerHTML='';}
+  await renderFallenArchive();
+  const {data:ghostRows}=await btbSupabase.from('ghost_scores').select('*').order('ghost_week');
+  const weeks=[...new Set((ghostRows||[]).map(r=>Number(r.ghost_week)))].sort((a,b)=>a-b);
+  if(!weeks.length){sel.innerHTML='<option>No Ghost Weeks</option>';summary.innerHTML='';list.innerHTML='<div class="grave-empty"><b>The cemetery is quiet.</b><br>After a chopped roster gets its one-week-later lineup entered in Admin, its Ghost Week will appear here.</div>';document.getElementById('graveBadge').textContent='AWAITING FIRST GHOST';return;}
+  const current=weeks.includes(Number(sel.value))?Number(sel.value):weeks[weeks.length-1];
+  sel.innerHTML=weeks.map(w=>`<option value="${w}" ${w===current?'selected':''}>Week ${w}</option>`).join('');
+  const rows=(ghostRows||[]).filter(r=>Number(r.ghost_week)===current).sort((a,b)=>Number(a.slot)-Number(b.slot));
+  const owner=rows[0]?.owner_name||'Ghost'; const chopWeek=Number(rows[0]?.chop_week||current-1); const ghostTotal=rows.reduce((s,r)=>s+Number(r.points||0),0);
+  const [{data:actual},{data:chops},{data:waivers}]=await Promise.all([
+    btbSupabase.from('weekly_scores').select('*').eq('week',current),
+    btbSupabase.from('finalized_chops').select('*').eq('week',chopWeek),
+    btbSupabase.from('waiver_transactions').select('*').eq('chop_week',chopWeek)
+  ]);
+  const real=(actual||[]).filter(r=>r.owner_name!==owner && r.current_score!==null && r.current_score!==undefined && r.current_score!=='').map(r=>({owner_name:r.owner_name,score:Number(r.current_score),ghost:false}));
+  const chopRow=(chops||[]).find(r=>r.owner_name===owner)||(chops||[])[0]||null;
+  const chopScore=chopRow&&Number.isFinite(Number(chopRow.score))?Number(chopRow.score):null;
+  const waiverByPlayer=new Map((waivers||[]).map(w=>[String(w.player_name||'').trim().toLowerCase(),w]));
+  if(!real.length){summary.innerHTML=`<div class="grave-stat ghost"><small>${owner} ghost score</small><b>${graveFmt(ghostTotal)}</b></div>`;list.innerHTML='<div class="grave-empty">Ghost lineup is saved, but Week '+current+' real scores are not available yet.</div>';return;}
+  const blade=Math.min(...real.map(r=>r.score));
+  const combined=[...real,{owner_name:owner,score:ghostTotal,ghost:true}].sort((a,b)=>b.score-a.score || (a.ghost?-1:1));
+  const ghostRank=1+combined.filter(r=>r.score>ghostTotal).length;
+  const margin=ghostTotal-blade;
+  const choppedAgain=ghostTotal<blade-0.004; const atBlade=Math.abs(margin)<0.005;
+  let punch;
+  if(choppedAgain){
+    punch='CHOPPED AGAIN';
+  }else{
+    // Scale the Ghost Week verdict to the size of that week's hypothetical field.
+    // Percentile runs from 0 for first place toward 1 for last place.
+    const ghostPct=(combined.length>1)?((ghostRank-1)/(combined.length-1)):0;
+    if(ghostPct<0.25) punch='BURIED TOO SOON';
+    else if(ghostPct<0.60) punch='WHERE WAS THIS LAST WEEK?';
+    else if(ghostPct<0.85) punch='ONE WEEK TOO LATE';
+    else punch='BARELY SURVIVED';
+  }
+  document.getElementById('graveBadge').textContent=`${owner.toUpperCase()} · W${chopWeek} CORPSE → W${current} GHOST`;
+  summary.innerHTML=`
+    <div class="grave-stat ghost"><small>Ghost Score</small><b>${graveFmt(ghostTotal)}</b></div>
+    <div class="grave-stat"><small>Hypothetical Finish</small><b>#${ghostRank} of ${combined.length}</b></div>
+    <div class="grave-stat"><small>Vs Week ${current} Blade</small><b>${margin>=0?'+':''}${graveFmt(margin)}</b></div>
+    <div class="grave-stat"><small>Verdict</small><b class="grave-punch">${punch}</b></div>`;
+  const max=Math.max(...combined.map(r=>r.score),1);
+  list.innerHTML=combined.map((r,i)=>{
+    const rank=1+combined.filter(x=>x.score>r.score).length;
+    const isBlade=!r.ghost && Math.abs(r.score-blade)<.005;
+    const cls=`grave-row${r.ghost?' ghost':''}${isBlade?' blade':''}`;
+    const img=REPLAY_HEADSHOTS[r.owner_name]||'';
+    const tag=r.ghost?`👻 GHOST W${current} · ${punch}`:(isBlade?`🪓 REAL W${current} BLADE`:`REAL W${current}`);
+    return `<div class="${cls}"><div class="grave-rank">${rank}</div><img class="grave-avatar" src="${img}" alt=""><div class="grave-owner">${r.owner_name}${r.ghost?`<small>Chopped W${chopWeek} · one-week-after score</small>`:''}</div><div class="grave-track"><div class="grave-fill" style="width:${Math.max(4,Math.round(r.score/max*100))}%"></div></div><div class="grave-score">${graveFmt(r.score)}</div><div class="grave-tag">${tag}</div></div>`;
+  }).join('');
+
+  if(agony){
+    const delta=chopScore===null?null:ghostTotal-chopScore;
+    const deltaText=delta===null?'—':`${delta>=0?'+':''}${graveFmt(delta)}`;
+    const agonyPunch=delta===null?'ONE WEEK LATER':delta>0.004?'WHERE WAS THAT LAST WEEK?':Math.abs(delta)<.005?'SAME PAIN, NEW WEEK':'THE CORPSE COOLED OFF';
+    const lineup=rows.map(r=>{
+      const w=waiverByPlayer.get(String(r.player_name||'').trim().toLowerCase());
+      const claim=w?`<span class="claim">CLAIMED BY ${w.acquired_by}${Number.isFinite(Number(w.winning_bid))?` · $${Math.round(Number(w.winning_bid))}`:''}</span>`:'<span>Stayed in the graveyard</span>';
+      return `<div class="agony-player"><div><strong>${r.player_name}</strong><div class="subline">${claim}</div></div><div class="pts">${graveFmt(r.points)}</div></div>`;
+    }).join('');
+    agony.innerHTML=`
+      <div class="agony-head"><div><div class="agony-kicker">💀 THE AGONY</div><h3>Where was this lineup last week?</h3></div><div class="agony-muted">Ghost starters · actual following-week points</div></div>
+      <div class="agony-compare">
+        <div class="agony-card ghost"><small>Ghost Week ${current}</small><b>${graveFmt(ghostTotal)}</b><span class="agony-muted">One week after elimination</span></div>
+        <div class="agony-card"><small>Chop Week ${chopWeek}</small><b>${chopScore===null?'—':graveFmt(chopScore)}</b><span class="agony-muted">Actual score when eliminated</span></div>
+        <div class="agony-card delta"><small>One-week swing</small><b>${deltaText}</b><span class="agony-muted">Ghost minus chop week</span></div>
+      </div>
+      <div class="agony-lineup">${lineup}</div>
+      <div class="agony-punch">${agonyPunch}</div>`;
+    agony.hidden=false;
+  }
+}
+document.getElementById('graveWeekSelect')?.addEventListener('change',renderGraveyard);
+document.getElementById('fallenExpandAll')?.addEventListener('click',()=>document.querySelectorAll('#fallenGrid details').forEach(d=>d.open=true));
+document.getElementById('fallenCollapseAll')?.addEventListener('click',()=>document.querySelectorAll('#fallenGrid details').forEach(d=>d.open=false));
+
 document.querySelectorAll('.mock-nav-btn').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.mock-nav-btn').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
   document.querySelectorAll('.mock-page').forEach(x=>x.classList.remove('active'));
   document.getElementById(`page-${b.dataset.page}`).classList.add('active');
   if(b.dataset.page==='replay')renderReplayBase();
+  if(b.dataset.page==='graveyard')renderGraveyard();
   if(b.dataset.page==='draft'&&!window.__draftInit){initDraftHub();window.__draftInit=true;}
 }));
 
