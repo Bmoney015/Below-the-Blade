@@ -1,5 +1,12 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0d1a24">
+
 <title>Below the Blade</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -97,6 +104,7 @@ footer{text-align:center;color:#7b827f;font-size:12px;padding:20px}
 .bounty-stat span{color:#78828a}
 .bounty-stat b{font-size:12px}
 .bounty-value{margin-top:8px;font-size:12px;font-weight:900;color:#9f2623}
+.bounty-value.claimed{color:#39d98a!important}
 .bounty-foot{margin-top:11px;background:#fff5db;border:1px solid #e1c46a;border-radius:9px;padding:9px 10px;font-size:11px;font-weight:800;color:#6b5314}
 .equity-main{display:grid;grid-template-columns:1.25fr .75fr;gap:12px;margin-top:14px}
 .equity-main>div{border:1px solid #ded5c8;border-radius:12px;padding:13px;background:#fff}
@@ -1600,7 +1608,7 @@ async function renderGraveyard(){
   await renderFallenArchive();
   const {data:ghostRows}=await btbSupabase.from('ghost_scores').select('*').order('ghost_week');
   const weeks=[...new Set((ghostRows||[]).map(r=>Number(r.ghost_week)))].sort((a,b)=>a-b);
-  if(!weeks.length){sel.innerHTML='<option>No Ghost Weeks</option>';summary.innerHTML='';list.innerHTML='<div class="grave-empty"><b>The cemetery is quiet.</b><br>After a chopped roster gets its one-week-later lineup entered in Admin, its Ghost Week will appear here.</div>';document.getElementById('graveBadge').textContent='AWAITING FIRST GHOST';return;}
+  if(!weeks.length){sel.innerHTML='<option>No Ghost Weeks</option>';summary.innerHTML='';list.innerHTML='<div class="grave-empty"><b>The cemetery is quiet.</b><br>After a chopped roster gets its one-week-later result, its Ghost Week will appear here.</div>';document.getElementById('graveBadge').textContent='AWAITING FIRST GHOST';return;}
   const current=weeks.includes(Number(sel.value))?Number(sel.value):weeks[weeks.length-1];
   sel.innerHTML=weeks.map(w=>`<option value="${w}" ${w===current?'selected':''}>Week ${w}</option>`).join('');
   const rows=(ghostRows||[]).filter(r=>Number(r.ghost_week)===current).sort((a,b)=>Number(a.slot)-Number(b.slot));
@@ -1745,7 +1753,7 @@ function renderBountyEconomy(){
           <div class="bounty-name">${name}</div>
           <div class="bounty-stat"><span>Status</span><b>CHOPPED · W${cw}</b></div>
           <div class="bounty-stat"><span>Added to pot</span><b>${currency0(added)}</b></div>
-          <div class="bounty-value">🎯 BOUNTY CLAIMED</div>
+          <div class="bounty-value claimed">🎯 BOUNTY CLAIMED</div>
         </div>
       </div>`;
     }
@@ -1806,13 +1814,11 @@ function renderFactions(){
  Object.entries(FACTION_GROUPS).forEach(([g,members])=>{let pts=0,ow=0,b3=0,wins=0,ranks=[],chops=0;members.forEach(n=>{if(chop[n]&&chop[n]<=through)chops++});
  for(let w=1;w<=through;w++){const d=REPLAY_WEEKLY[w]||{},field=Object.keys(d),ranked=[...field].sort((a,b)=>d[b]-d[a]),bottom=new Set(ranked.slice(-3));members.forEach(n=>{if(d[n]!==undefined){pts+=+d[n];ow++;let r=ranked.indexOf(n)+1;ranks.push(r);if(r===1)wins++;if(bottom.has(n))b3++;}})}
  const alive=members.filter(n=>!(chop[n]&&chop[n]<=through)).length,fieldNow=Object.keys(REPLAY_WEEKLY[through]||{}).length;
- const aliveMembers=members.filter(n=>!(chop[n]&&chop[n]<=through));
- const avgFab=aliveMembers.length?aliveMembers.reduce((s,n)=>s+(REPLAY_FAB_REMAINING[n]||0),0)/aliveMembers.length:0;
- M[g]={members,alive,start:members.length,avg:pts/ow,avgRank:ranks.reduce((a,b)=>a+b,0)/ranks.length,b3,wins,chops,delta:alive-fieldNow*(members.length/18),avgFab};});
+ M[g]={members,alive,start:members.length,avg:pts/ow,avgRank:ranks.reduce((a,b)=>a+b,0)/ranks.length,b3,wins,chops,delta:alive-fieldNow*(members.length/18)};});
  const gs=Object.keys(M),best=Math.max(...gs.map(g=>M[g].alive/M[g].start));
  document.getElementById('factionCards').innerHTML=gs.map(g=>{const x=M[g];return `<div class="faction-card ${x.alive/x.start===best?'best':''}"><div class="fc-name">${g}</div><div class="fc-alive">${x.alive}<span> / ${x.start} ALIVE</span></div><div class="fc-members">${x.members.join(' · ')}</div><div class="fc-edge"></div></div>`}).join('');
  document.getElementById('factionHead').innerHTML='<th>Metric</th>'+gs.map(g=>`<th>${g}</th>`).join('');
- const rows=[['Owners Remaining','Survivors / starting members',x=>x.alive/x.start,x=>`${x.alive}/${x.start}`,1],['Avg Weekly Points','Per active owner-week',x=>x.avg,x=>x.avg.toFixed(1),1],['Avg Weekly Rank','Lower is better',x=>x.avgRank,x=>x.avgRank.toFixed(1),0],['Weekly #1 Finishes','Best score in full field',x=>x.wins,x=>x.wins,1],['Bottom-3 Finishes','Danger-zone appearances',x=>x.b3,x=>x.b3,0],['Chops','Fewer is better',x=>x.chops,x=>x.chops,0],['Avg FAB Remaining','Among surviving owners',x=>x.avgFab,x=>`$${Math.round(x.avgFab).toLocaleString()}`,1],['Survivors vs Expected','Normalized for starting size',x=>x.delta,x=>`${x.delta>=0?'+':''}${x.delta.toFixed(1)}`,1]];
+ const rows=[['Owners Remaining','Survivors / starting members',x=>x.alive/x.start,x=>`${x.alive}/${x.start}`,1],['Avg Weekly Points','Per active owner-week',x=>x.avg,x=>x.avg.toFixed(1),1],['Avg Weekly Rank','Lower is better',x=>x.avgRank,x=>x.avgRank.toFixed(1),0],['Weekly #1 Finishes','Best score in full field',x=>x.wins,x=>x.wins,1],['Bottom-3 Finishes','Danger-zone appearances',x=>x.b3,x=>x.b3,0],['Chops','Fewer is better',x=>x.chops,x=>x.chops,0],['Survivors vs Expected','Normalized for starting size',x=>x.delta,x=>`${x.delta>=0?'+':''}${x.delta.toFixed(1)}`,1]];
  const wc=Object.fromEntries(gs.map(g=>[g,0]));
  document.getElementById('factionBody').innerHTML=rows.map(r=>{const vals=gs.map(g=>r[2](M[g])),target=r[4]?Math.max(...vals):Math.min(...vals);return `<tr><td>${r[0]}<span class="metric-note">${r[1]}</span></td>`+gs.map((g,i)=>{const win=Math.abs(vals[i]-target)<.0001;if(win)wc[g]++;const bad=(r[0]=='Chops'||r[0]=='Bottom-3 Finishes')&&vals[i]===Math.max(...vals)&&!win;return `<td class="${win?'win':''} ${bad?'bad':''}">${win?'✓ ':''}${r[3](M[g])}</td>`}).join('')+'</tr>'}).join('');
  const ord=[...gs].sort((a,b)=>wc[b]-wc[a]),lead=wc[ord[0]],ties=ord.filter(g=>wc[g]===lead);
@@ -2184,7 +2190,6 @@ async function loadLiveFinalSweat(){
   liveBtn.style.display='';
   liveBtn.innerHTML=`🔴 Final Sweat · Week ${state.current_week}`;
   document.getElementById('sweatKicker').textContent=`🔴 WEEK ${state.current_week} LIVE · FINAL SWEAT`;
-  setDashboardMode('live');
 
   // Final Sweat must only consider teams that are still alive entering this week.
   // Old weekly_scores rows can remain in Supabase after an owner is chopped, so
@@ -2197,6 +2202,9 @@ async function loadLiveFinalSweat(){
       Number(r.starters_remaining)>0 ||
       (r.remaining_players && String(r.remaining_players).trim())
     );
+
+  // Between games, lead with the latest completed story. Once current-week scoring/activity exists, lead with Final Sweat.
+  setDashboardMode(entered.length ? 'live' : 'completed');
 
   if(!entered.length){
     document.getElementById('sweatGrid').innerHTML='<div class="sweat-error">Week is LIVE, but no live scores have been entered yet.</div>';
