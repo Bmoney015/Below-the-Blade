@@ -46,6 +46,8 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
 .waiver-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:12px}.waiver-stat{background:#10212c;border:1px solid #344a58;border-radius:10px;padding:10px}.waiver-stat small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.07em}.waiver-stat b{display:block;font-size:20px;margin-top:3px}.corpse-yes{color:var(--green);font-weight:900}.corpse-no{color:var(--muted)}
 @media(max-width:820px){.waiver-grid{grid-template-columns:1fr 1fr}.waiver-grid .wh{display:none}.waiver-remove{width:100%}.waiver-summary{grid-template-columns:1fr 1fr}}
 
+.fab-grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:9px;margin-top:12px}.fab-owner{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;background:#10212c;border:1px solid #344a58;border-radius:10px;padding:9px 10px}.fab-owner b{font-size:12px}.fab-owner input{padding:8px 9px;text-align:right}.fab-owner.eliminated{opacity:.5}.fab-owner.eliminated input{pointer-events:none}.fab-snapshot{margin-top:12px;padding:11px 12px;border:1px solid #5b5269;background:#211d2a;border-radius:10px;color:#d7cce5;font-size:11px;line-height:1.45}.fab-snapshot-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.fab-snapshot-toggle{padding:6px 9px;font-size:10px;background:#31293c;border-color:#6b5c7c}.fab-snapshot-list{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:6px 12px;margin-top:10px;padding-top:9px;border-top:1px solid #4d435a}.fab-snapshot-item{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}.fab-snapshot-item b{color:#fff}.fab-snapshot-item span{font-variant-numeric:tabular-nums;color:#d8c8ef}@media(max-width:700px){.fab-snapshot-list{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.fab-grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.fab-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -99,7 +101,16 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
   </section>
 
 
-  <section class="card danger-zone hidden" id="dangerCard">
+  <section class="card hidden" id="fabCard">
+    <div class="topline"><div><b>FAB balances</b><div class="smallprint">Current bankroll is authoritative and can be adjusted anytime. Update only the owners whose balances changed, then save.</div></div><div id="fabPill" class="pill">CURRENT BALANCES</div></div>
+    <div class="note" style="margin-top:12px"><b>Starting FAB: $1,000.</b> These balances include all waiver spending — Wednesday through Sunday. The Wednesday transaction table remains separate and is used for corpse value / bidding efficiency.</div>
+    <div id="fabRows" class="fab-grid"></div>
+    <div class="fab-snapshot"><div class="fab-snapshot-head"><b id="fabSnapshotTitle">Pre-Waiver Snapshot</b><button type="button" id="fabSnapshotToggle" class="fab-snapshot-toggle hidden">View Snapshot</button></div><span id="fabSnapshotText">Lock the surviving field's balances immediately before the Wednesday waiver run. This preserves the correct bankroll denominator for historical % calculations even after later claims.</span><div id="fabSnapshotList" class="fab-snapshot-list hidden"></div></div>
+    <div class="actions"><button class="green" id="saveFabBtn">Save Current FAB Balances</button><button id="snapshotFabBtn">Lock Pre-Waiver Snapshot</button></div>
+    <div class="status" id="fabStatus"></div>
+  </section>
+
+    <section class="card danger-zone hidden" id="dangerCard">
     <h2>Danger Zone</h2>
     <div class="smallprint warning">Recovery tools for scoring corrections. Use Reset Season only if you intentionally want to erase the season database.</div>
     <div class="actions">
@@ -236,7 +247,7 @@ async function initClient(){
   if(session)onLoggedIn(session.user);
 }
 async function onLoggedIn(user){
-  $('adminCard').classList.remove('hidden');$('dangerCard').classList.remove('hidden');$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');
+  $('adminCard').classList.remove('hidden');$('fabCard').classList.remove('hidden');$('dangerCard').classList.remove('hidden');$('loginBtn').classList.add('hidden');$('logoutBtn').classList.remove('hidden');
   setStatus('authStatus',`Logged in as ${user.email}`,true);await loadStateAndScores();
 }
 async function loadStateAndScores(){
@@ -250,6 +261,7 @@ async function loadStateAndScores(){
   const alreadyOut=new Set((priorChops||[]).map(r=>r.owner_name));
   ACTIVE_OWNERS=ALL_OWNERS.filter(name=>!alreadyOut.has(name));
   ELIMINATED_OWNERS=[...(priorChops||[])].sort((a,b)=>Number(a.week)-Number(b.week));
+  await loadFabBalances(week);
 
   const {data:scores,error:e2}=await sb.from('weekly_scores').select('*').eq('week',week).order('owner_name');
   if(e2)return setStatus('saveStatus','Could not read weekly_scores: '+e2.message,false);
@@ -269,6 +281,47 @@ async function loadStateAndScores(){
   await loadGhostWeek(week);
 }
 
+async function loadFabBalances(currentWeek){
+  const [{data:balances,error:bErr},{data:snapshots,error:sErr}]=await Promise.all([
+    sb.from('fab_balances').select('*'),sb.from('fab_snapshots').select('*').eq('week',currentWeek)
+  ]);
+  if(bErr||sErr)return setStatus('fabStatus','Could not load FAB data: '+(bErr||sErr).message,false);
+  const map=Object.fromEntries((balances||[]).map(r=>[r.owner_name,Number(r.current_fab)]));
+  const dead=new Set(ELIMINATED_OWNERS.map(r=>r.owner_name));
+  $('fabRows').innerHTML=ALL_OWNERS.map(name=>`<div class="fab-owner ${dead.has(name)?'eliminated':''}" data-fab-owner="${name}"><b>${name}${dead.has(name)?' · OUT':''}</b><input class="fab-balance" type="number" min="0" max="1000" step="1" value="${Number.isFinite(map[name])?map[name]:1000}" ${dead.has(name)?'disabled':''}></div>`).join('');
+  const count=(snapshots||[]).length;
+  $('fabSnapshotTitle').textContent=count?`🔒 Week ${currentWeek} Pre-Waiver Snapshot — LOCKED`:`Week ${currentWeek} Pre-Waiver Snapshot`;
+  $('fabSnapshotText').textContent=count?`${count} survivor balances frozen before Wednesday waivers. Current balances above can continue changing without altering this snapshot.`:`Not locked yet. Lock this immediately before the Week ${currentWeek} Wednesday waiver run, before entering post-waiver balance changes.`;
+  const snapToggle=$('fabSnapshotToggle'),snapList=$('fabSnapshotList');
+  if(count){
+    const order=new Map(ALL_OWNERS.map((n,i)=>[n,i]));
+    const frozen=[...(snapshots||[])].sort((a,b)=>(order.get(a.owner_name)??999)-(order.get(b.owner_name)??999));
+    snapList.innerHTML=frozen.map(r=>`<div class="fab-snapshot-item"><b>${r.owner_name}</b><span>$${Number(r.fab_before).toLocaleString()}</span></div>`).join('');
+    snapToggle.classList.remove('hidden');snapToggle.textContent=snapList.classList.contains('hidden')?'View Snapshot':'Hide Snapshot';
+  }else{snapToggle.classList.add('hidden');snapList.classList.add('hidden');snapList.innerHTML='';}
+  $('snapshotFabBtn').textContent=count?`Replace Week ${currentWeek} Snapshot`:`Lock Week ${currentWeek} Pre-Waiver Snapshot`;
+  $('fabPill').textContent=count?`W${currentWeek} SNAPSHOT LOCKED`:'CURRENT BALANCES'; $('fabPill').className='pill '+(count?'final':'');
+  setStatus('fabStatus',`Loaded current FAB for ${ACTIVE_OWNERS.length} surviving owners.`,true);
+}
+function collectFabBalances(){
+  return [...document.querySelectorAll('[data-fab-owner]')].filter(x=>!x.classList.contains('eliminated')).map(x=>({owner_name:x.dataset.fabOwner,current_fab:Number(x.querySelector('.fab-balance').value),updated_at:new Date().toISOString()}));
+}
+async function saveFabBalances(){
+  const rows=collectFabBalances();
+  for(const r of rows)if(!Number.isFinite(r.current_fab)||r.current_fab<0||r.current_fab>1000)return setStatus('fabStatus',`${r.owner_name} needs a FAB balance from $0 to $1,000.`,false);
+  const {error}=await sb.from('fab_balances').upsert(rows,{onConflict:'owner_name'});if(error)return setStatus('fabStatus',error.message,false);
+  setStatus('fabStatus',`Saved current FAB balances for ${rows.length} surviving owners. You can update them again anytime.`,true);
+}
+async function snapshotFabBalances(){
+  const week=Number($('weekNumber').value); const rows=collectFabBalances();
+  const {data:existing}=await sb.from('fab_snapshots').select('*').eq('week',week);
+  if(existing?.length){if(!confirm(`Replace the existing Week ${week} pre-waiver FAB snapshot with the balances currently shown?
+
+Historical percentage calculations for Week ${week} will use the replacement.`))return;await sb.from('fab_snapshots').delete().eq('week',week);}
+  const payload=rows.map(r=>({week,owner_name:r.owner_name,fab_before:r.current_fab,updated_at:new Date().toISOString()}));
+  const {error}=await sb.from('fab_snapshots').insert(payload);if(error)return setStatus('fabStatus',error.message,false);
+  await loadFabBalances(week);setStatus('fabStatus',`Week ${week} pre-waiver snapshot locked for ${payload.length} surviving owners. Later FAB updates will not change it.`,true);
+}
 function rosterLines(raw){
   return String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
 }
@@ -572,6 +625,14 @@ async function resetSeasonToWeek1(){
     let r=await sb.from('ghost_scores').delete().gte('ghost_week',1);
     if(r.error) throw r.error;
 
+    r=await sb.from('fab_snapshots').delete().gte('week',1);
+    if(r.error) throw r.error;
+
+    r=await sb.from('fab_balances').delete().gte('current_fab',0);
+    if(r.error) throw r.error;
+    r=await sb.from('fab_balances').insert(ALL_OWNERS.map(owner_name=>({owner_name,current_fab:1000,updated_at:new Date().toISOString()})));
+    if(r.error) throw r.error;
+
     r=await sb.from('waiver_transactions').delete().gte('chop_week',1);
     if(r.error) throw r.error;
 
@@ -615,12 +676,18 @@ $('cancelResetBtn').addEventListener('click',closeResetModal);
 $('confirmResetBtn').addEventListener('click',resetSeasonToWeek1);
 $('resetModal').addEventListener('click',e=>{if(e.target===$('resetModal'))closeResetModal();});
 
+$('saveFabBtn').addEventListener('click',saveFabBalances);
+$('snapshotFabBtn').addEventListener('click',snapshotFabBalances);
+$('fabSnapshotToggle').addEventListener('click',()=>{
+  const list=$('fabSnapshotList'),btn=$('fabSnapshotToggle');
+  const willShow=list.classList.contains('hidden');list.classList.toggle('hidden',!willShow);btn.textContent=willShow?'Hide Snapshot':'View Snapshot';
+});
 $('loginBtn').addEventListener('click',async()=>{
   if(!sb)await initClient();if(!sb)return;setStatus('authStatus','Logging in...');
   const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
   if(error)return setStatus('authStatus',error.message,false);onLoggedIn(data.user);
 });
-$('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();$('adminCard').classList.add('hidden');$('dangerCard').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');setStatus('authStatus','Logged out.')});
+$('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();$('adminCard').classList.add('hidden');$('fabCard').classList.add('hidden');$('dangerCard').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');setStatus('authStatus','Logged out.')});
 $('loadBtn').addEventListener('click',loadStateAndScores);
 $('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});

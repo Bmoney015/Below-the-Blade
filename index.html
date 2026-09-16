@@ -1714,6 +1714,7 @@ const PRIZE_BASE=2000;
 let CURRENT_WEEK=6; // Updated from Supabase when a week is finalized.
 let CURRENT_SURVIVORS=13;
 let REAL_SEASON_MODE=false;
+let CURRENT_FAB_BALANCES={};
 
 function currency(v){return '$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
 function currency0(v){return '$'+Math.round(v).toLocaleString();}
@@ -1814,11 +1815,17 @@ function renderFactions(){
  Object.entries(FACTION_GROUPS).forEach(([g,members])=>{let pts=0,ow=0,b3=0,wins=0,ranks=[],chops=0;members.forEach(n=>{if(chop[n]&&chop[n]<=through)chops++});
  for(let w=1;w<=through;w++){const d=REPLAY_WEEKLY[w]||{},field=Object.keys(d),ranked=[...field].sort((a,b)=>d[b]-d[a]),bottom=new Set(ranked.slice(-3));members.forEach(n=>{if(d[n]!==undefined){pts+=+d[n];ow++;let r=ranked.indexOf(n)+1;ranks.push(r);if(r===1)wins++;if(bottom.has(n))b3++;}})}
  const alive=members.filter(n=>!(chop[n]&&chop[n]<=through)).length,fieldNow=Object.keys(REPLAY_WEEKLY[through]||{}).length;
- M[g]={members,alive,start:members.length,avg:pts/ow,avgRank:ranks.reduce((a,b)=>a+b,0)/ranks.length,b3,wins,chops,delta:alive-fieldNow*(members.length/18)};});
+ const aliveMembers=members.filter(n=>!(chop[n]&&chop[n]<=through));
+ const fabVals=aliveMembers.map(n=>CURRENT_FAB_BALANCES[n]).filter(v=>Number.isFinite(Number(v)));
+ const avgFab=fabVals.length?fabVals.reduce((a,b)=>a+Number(b),0)/fabVals.length:null;
+ const expectedAlive=(18-through)*(members.length/18);
+ M[g]={members,alive,start:members.length,avg:pts/ow,avgRank:ranks.reduce((a,b)=>a+b,0)/ranks.length,b3,wins,chops,delta:alive-expectedAlive,avgFab};});
  const gs=Object.keys(M),best=Math.max(...gs.map(g=>M[g].alive/M[g].start));
  document.getElementById('factionCards').innerHTML=gs.map(g=>{const x=M[g];return `<div class="faction-card ${x.alive/x.start===best?'best':''}"><div class="fc-name">${g}</div><div class="fc-alive">${x.alive}<span> / ${x.start} ALIVE</span></div><div class="fc-members">${x.members.join(' · ')}</div><div class="fc-edge"></div></div>`}).join('');
  document.getElementById('factionHead').innerHTML='<th>Metric</th>'+gs.map(g=>`<th>${g}</th>`).join('');
- const rows=[['Owners Remaining','Survivors / starting members',x=>x.alive/x.start,x=>`${x.alive}/${x.start}`,1],['Avg Weekly Points','Per active owner-week',x=>x.avg,x=>x.avg.toFixed(1),1],['Avg Weekly Rank','Lower is better',x=>x.avgRank,x=>x.avgRank.toFixed(1),0],['Weekly #1 Finishes','Best score in full field',x=>x.wins,x=>x.wins,1],['Bottom-3 Finishes','Danger-zone appearances',x=>x.b3,x=>x.b3,0],['Chops','Fewer is better',x=>x.chops,x=>x.chops,0],['Survivors vs Expected','Normalized for starting size',x=>x.delta,x=>`${x.delta>=0?'+':''}${x.delta.toFixed(1)}`,1]];
+ const rows=[['Owners Remaining','Survivors / starting members',x=>x.alive/x.start,x=>`${x.alive}/${x.start}`,1],['Avg Weekly Points','Per active owner-week',x=>x.avg,x=>x.avg.toFixed(1),1],['Avg Weekly Rank','Lower is better',x=>x.avgRank,x=>x.avgRank.toFixed(1),0],['Weekly #1 Finishes','Best score in full field',x=>x.wins,x=>x.wins,1],['Bottom-3 Finishes','Danger-zone appearances',x=>x.b3,x=>x.b3,0],['Chops','Fewer is better',x=>x.chops,x=>x.chops,0]];
+ if(gs.some(g=>Number.isFinite(Number(M[g].avgFab)))) rows.push(['Avg FAB Remaining','Among surviving owners',x=>Number.isFinite(Number(x.avgFab))?x.avgFab:-1,x=>Number.isFinite(Number(x.avgFab))?`$${Math.round(x.avgFab).toLocaleString()}`:'—',1]);
+ rows.push(['Survivors vs Expected','Actual survivors minus proportional expectation',x=>x.delta,x=>`${x.delta>=0?'+':''}${x.delta.toFixed(2)}`,1]);
  const wc=Object.fromEntries(gs.map(g=>[g,0]));
  document.getElementById('factionBody').innerHTML=rows.map(r=>{const vals=gs.map(g=>r[2](M[g])),target=r[4]?Math.max(...vals):Math.min(...vals);return `<tr><td>${r[0]}<span class="metric-note">${r[1]}</span></td>`+gs.map((g,i)=>{const win=Math.abs(vals[i]-target)<.0001;if(win)wc[g]++;const bad=(r[0]=='Chops'||r[0]=='Bottom-3 Finishes')&&vals[i]===Math.max(...vals)&&!win;return `<td class="${win?'win':''} ${bad?'bad':''}">${win?'✓ ':''}${r[3](M[g])}</td>`}).join('')+'</tr>'}).join('');
  const ord=[...gs].sort((a,b)=>wc[b]-wc[a]),lead=wc[ord[0]],ties=ord.filter(g=>wc[g]===lead);
@@ -1929,15 +1936,17 @@ function renderRealSeasonSurvivalBoard(){
 
 function btbNormPlayer(v){return String(v||'').trim().toLowerCase().replace(/[’]/g,"'").replace(/\s+/g,' ')}
 async function renderRealSeasonWaiverAnalytics(){
-  const [runRes,txRes,rosterRes]=await Promise.all([
+  const [runRes,txRes,rosterRes,snapshotRes]=await Promise.all([
     btbSupabase.from('waiver_runs').select('*').order('chop_week'),
     btbSupabase.from('waiver_transactions').select('*').order('chop_week'),
-    btbSupabase.from('chopped_rosters').select('week,owner_name,player_name').order('week')
+    btbSupabase.from('chopped_rosters').select('week,owner_name,player_name').order('week'),
+    btbSupabase.from('fab_snapshots').select('*').order('week')
   ]);
-  if(runRes.error||txRes.error||rosterRes.error){
-    console.warn('Could not load waiver analytics',runRes.error||txRes.error||rosterRes.error);return;
+  if(runRes.error||txRes.error||rosterRes.error||snapshotRes.error){
+    console.warn('Could not load waiver analytics',runRes.error||txRes.error||rosterRes.error||snapshotRes.error);return;
   }
-  const runs=runRes.data||[], tx=txRes.data||[], rosters=rosterRes.data||[];
+  const runs=runRes.data||[], tx=txRes.data||[], rosters=rosterRes.data||[], snapshots=snapshotRes.data||[];
+  const snapMap=new Map(snapshots.map(r=>[`${Number(r.week)}|${r.owner_name}`,Number(r.fab_before)]));
   if(!runs.length)return;
   const runWeeks=new Set(runs.map(r=>Number(r.chop_week)));
   const rosterByWeek={}; rosters.forEach(r=>{const w=Number(r.week);(rosterByWeek[w]??=new Set()).add(btbNormPlayer(r.player_name));});
@@ -1948,6 +1957,8 @@ async function renderRealSeasonWaiverAnalytics(){
   const most=[...corpses].sort((a,b)=>b.value-a.value)[0], cheap=[...corpses].sort((a,b)=>a.value-b.value)[0];
   const avg=corpses.reduce((s,x)=>s+x.value,0)/Math.max(1,corpses.length);
   const bite=[...corpseTx].sort((a,b)=>Number(b.winning_bid)-Number(a.winning_bid))[0];
+  const biteBank=bite?snapMap.get(`${Number(bite.chop_week)+1}|${bite.acquired_by}`):null;
+  const bitePct=Number.isFinite(biteBank)&&biteBank>0?Number(bite.winning_bid)/biteBank:null;
   const title=[...document.querySelectorAll('.section-title')].find(x=>x.querySelector('.kicker')?.textContent.trim().toLowerCase()==='chop economy');
   const econ=title?.nextElementSibling;
   if(title&&econ){
@@ -1957,13 +1968,13 @@ async function renderRealSeasonWaiverAnalytics(){
       const only=corpses[0];
       econ.innerHTML=`
         <div class="panel"><div class="kicker">Corpse value</div><div class="metric">${money0(only?.value||0)}</div><b>${escHtml(only?.owner||'—')} · Week ${only?.week||'—'}</b><p class="sub">Winning FAB spent on players from the first chopped roster in its first Wednesday waiver run.</p></div>
-        <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid on a player released by the Week 1 corpse.</p></div>`;
+        <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid on a player released by the Week 1 corpse.${bitePct!==null?` ${Math.round(bitePct*100)}% of ${escHtml(bite.acquired_by||'buyer')}'s pre-waiver FAB.`:''}</p></div>`;
     }else{
       econ.innerHTML=`
         <div class="panel"><div class="kicker">Most valuable corpse</div><div class="metric">${money0(most?.value||0)}</div><b>${escHtml(most?.owner||'—')} · Week ${most?.week||'—'}</b><p class="sub">Winning FAB spent on players from that chopped roster in its first Wednesday waiver run.</p></div>
         <div class="panel"><div class="kicker">Cheapest corpse</div><div class="metric">${money0(cheap?.value||0)}</div><b>${escHtml(cheap?.owner||'—')} · Week ${cheap?.week||'—'}</b><p class="sub">Unclaimed corpse players count as $0; later-week adds do not count.</p></div>
         <div class="panel"><div class="kicker">Average corpse value</div><div class="metric">${money0(avg)}</div><b>${corpses.length} recorded corpses</b><p class="sub">Average market value created by the chop, measured by actual first-run winning bids.</p></div>
-        <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid so far on a player released by a chopped roster.</p></div>`;
+        <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid so far on a player released by a chopped roster.${bitePct!==null?` ${Math.round(bitePct*100)}% of ${escHtml(bite.acquired_by||'buyer')}'s pre-waiver FAB.`:''}</p></div>`;
     }
   }
   const fab=document.getElementById('fabEfficiencyFeature');
@@ -2069,9 +2080,15 @@ function updateCompletedLabels(week,chopped,score){
   });
 }
 
+async function loadCurrentFabBalances(){
+  const {data,error}=await btbSupabase.from('fab_balances').select('*');
+  if(error){console.warn('Could not load FAB balances',error);CURRENT_FAB_BALANCES={};return;}
+  CURRENT_FAB_BALANCES=Object.fromEntries((data||[]).map(r=>[r.owner_name,Number(r.current_fab)]));
+}
 async function loadPersistentChops(state){
   const productionMode = state && state.use_mock_history === false;
   REAL_SEASON_MODE=productionMode;
+  await loadCurrentFabBalances();
 
   if(productionMode){
     Object.keys(REPLAY_CHOPPED).forEach(k=>delete REPLAY_CHOPPED[k]);
