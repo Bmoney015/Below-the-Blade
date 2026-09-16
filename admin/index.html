@@ -296,7 +296,7 @@ async function loadFabBalances(currentWeek){
   if(count){
     const order=new Map(ALL_OWNERS.map((n,i)=>[n,i]));
     const frozen=[...(snapshots||[])].sort((a,b)=>(order.get(a.owner_name)??999)-(order.get(b.owner_name)??999));
-    snapList.innerHTML=frozen.map(r=>`<div class="fab-snapshot-item"><b>${r.owner_name}</b><span>$${Number(r.fab_before).toLocaleString()}</span></div>`).join('');
+    snapList.innerHTML=frozen.map(r=>`<div class="fab-snapshot-item"><b>${r.owner_name}</b><span>$${Number(r.fab_before_waivers).toLocaleString()}</span></div>`).join('');
     snapToggle.classList.remove('hidden');snapToggle.textContent=snapList.classList.contains('hidden')?'View Snapshot':'Hide Snapshot';
   }else{snapToggle.classList.add('hidden');snapList.classList.add('hidden');snapList.innerHTML='';}
   $('snapshotFabBtn').textContent=count?`Replace Week ${currentWeek} Snapshot`:`Lock Week ${currentWeek} Pre-Waiver Snapshot`;
@@ -318,7 +318,7 @@ async function snapshotFabBalances(){
   if(existing?.length){if(!confirm(`Replace the existing Week ${week} pre-waiver FAB snapshot with the balances currently shown?
 
 Historical percentage calculations for Week ${week} will use the replacement.`))return;await sb.from('fab_snapshots').delete().eq('week',week);}
-  const payload=rows.map(r=>({week,owner_name:r.owner_name,fab_before:r.current_fab,updated_at:new Date().toISOString()}));
+  const payload=rows.map(r=>({week,owner_name:r.owner_name,fab_before_waivers:r.current_fab,locked_at:new Date().toISOString()}));
   const {error}=await sb.from('fab_snapshots').insert(payload);if(error)return setStatus('fabStatus',error.message,false);
   await loadFabBalances(week);setStatus('fabStatus',`Week ${week} pre-waiver snapshot locked for ${payload.length} surviving owners. Later FAB updates will not change it.`,true);
 }

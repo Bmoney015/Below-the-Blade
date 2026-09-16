@@ -1946,7 +1946,7 @@ async function renderRealSeasonWaiverAnalytics(){
     console.warn('Could not load waiver analytics',runRes.error||txRes.error||rosterRes.error||snapshotRes.error);return;
   }
   const runs=runRes.data||[], tx=txRes.data||[], rosters=rosterRes.data||[], snapshots=snapshotRes.data||[];
-  const snapMap=new Map(snapshots.map(r=>[`${Number(r.week)}|${r.owner_name}`,Number(r.fab_before)]));
+  const snapMap=new Map(snapshots.map(r=>[`${Number(r.week)}|${r.owner_name}`,Number(r.fab_before_waivers)]));
   if(!runs.length)return;
   const runWeeks=new Set(runs.map(r=>Number(r.chop_week)));
   const rosterByWeek={}; rosters.forEach(r=>{const w=Number(r.week);(rosterByWeek[w]??=new Set()).add(btbNormPlayer(r.player_name));});
