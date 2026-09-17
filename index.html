@@ -1586,19 +1586,27 @@ function graveEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<
 async function renderFallenArchive(){
   const grid=document.getElementById('fallenGrid'), count=document.getElementById('fallenCount');
   if(!grid)return;
-  const [{data:chops},{data:rosters}]=await Promise.all([
+  const [{data:chops},{data:rosters},{data:waivers},{data:snapshots}]=await Promise.all([
     btbSupabase.from('finalized_chops').select('*').order('week'),
-    btbSupabase.from('chopped_rosters').select('*').order('week')
+    btbSupabase.from('chopped_rosters').select('*').order('week'),
+    btbSupabase.from('waiver_transactions').select('chop_week,player_name,winning_bid').order('chop_week'),
+    btbSupabase.from('fab_snapshots').select('week,owner_name,fab_before_waivers').order('week')
   ]);
   const finalized=(chops||[]).slice().sort((a,b)=>Number(a.week)-Number(b.week));
   if(!finalized.length){grid.innerHTML='<div class="fallen-empty">The cemetery is empty. Finalized chopped teams will appear here with their frozen rosters.</div>';if(count)count.textContent='No corpses yet.';return;}
-  const rosterRows=rosters||[];
+  const rosterRows=rosters||[], waiverRows=waivers||[], snapshotRows=snapshots||[];
   if(count)count.textContent=`${finalized.length} fallen team${finalized.length===1?'':'s'} · rosters frozen at elimination`;
   grid.innerHTML=finalized.map(ch=>{
     const week=Number(ch.week), owner=String(ch.owner_name||'Unknown');
     const players=rosterRows.filter(r=>Number(r.week)===week && r.owner_name===owner).map(r=>String(r.player_name||'').trim()).filter(Boolean);
+    const corpseNames=new Set(players.map(btbNormPlayer));
+    const corpseSpent=waiverRows.filter(r=>Number(r.chop_week)===week && corpseNames.has(btbNormPlayer(r.player_name))).reduce((sum,r)=>sum+Number(r.winning_bid||0),0);
+    const preWaiverWeek=week+1;
+    const leagueFab=snapshotRows.filter(r=>Number(r.week)===preWaiverWeek).reduce((sum,r)=>sum+Number(r.fab_before_waivers||0),0);
+    const share=leagueFab>0?corpseSpent/leagueFab:null;
+    const market=corpseSpent>0||share!==null?` · $${Math.round(corpseSpent).toLocaleString()} claimed${share!==null?` · ${(share*100).toFixed(1)}% of league FAB`:''}`:'';
     const roster=players.length?players.map(p=>`<div class="fallen-player">${graveEsc(p)}</div>`).join(''):'<div class="fallen-player">Roster not saved yet.</div>';
-    return `<details class="fallen-card"><summary><span class="fallen-week">W${week}</span><span><span class="fallen-owner">${graveEsc(owner)}</span><span class="fallen-count">${players.length?`${players.length} players`:'Roster pending'}</span></span><span class="fallen-toggle"></span></summary><div class="fallen-roster">${roster}</div></details>`;
+    return `<details class="fallen-card"><summary><span class="fallen-week">W${week}</span><span><span class="fallen-owner">${graveEsc(owner)}</span><span class="fallen-count">${players.length?`${players.length} players${market}`:'Roster pending'}</span></span><span class="fallen-toggle"></span></summary><div class="fallen-roster">${roster}</div></details>`;
   }).join('');
 }
 async function renderGraveyard(){
@@ -1953,7 +1961,11 @@ async function renderRealSeasonWaiverAnalytics(){
   const chopValue={}; const corpseTx=[];
   runs.forEach(r=>chopValue[Number(r.chop_week)]=0);
   tx.forEach(t=>{const w=Number(t.chop_week);if(runWeeks.has(w) && rosterByWeek[w]?.has(btbNormPlayer(t.player_name))){chopValue[w]=(chopValue[w]||0)+Number(t.winning_bid||0);corpseTx.push(t);}});
-  const corpses=runs.map(r=>({week:Number(r.chop_week),owner:r.chopped_owner||REPLAY_CHOPPED[String(r.chop_week)]||'Unknown',value:Number(chopValue[Number(r.chop_week)]||0)}));
+  const corpses=runs.map(r=>{
+    const week=Number(r.chop_week), value=Number(chopValue[week]||0);
+    const leagueFab=snapshots.filter(s=>Number(s.week)===week+1).reduce((sum,s)=>sum+Number(s.fab_before_waivers||0),0);
+    return {week,owner:r.chopped_owner||REPLAY_CHOPPED[String(week)]||'Unknown',value,leagueFab,share:leagueFab>0?value/leagueFab:null};
+  });
   const most=[...corpses].sort((a,b)=>b.value-a.value)[0], cheap=[...corpses].sort((a,b)=>a.value-b.value)[0];
   const avg=corpses.reduce((s,x)=>s+x.value,0)/Math.max(1,corpses.length);
   const bite=[...corpseTx].sort((a,b)=>Number(b.winning_bid)-Number(a.winning_bid))[0];
@@ -1967,11 +1979,11 @@ async function renderRealSeasonWaiverAnalytics(){
     if(corpses.length===1){
       const only=corpses[0];
       econ.innerHTML=`
-        <div class="panel"><div class="kicker">Corpse value</div><div class="metric">${money0(only?.value||0)}</div><b>${escHtml(only?.owner||'—')} · Week ${only?.week||'—'}</b><p class="sub">Winning FAB spent on players from the first chopped roster in its first Wednesday waiver run.</p></div>
+        <div class="panel"><div class="kicker">Corpse value</div><div class="metric">${money0(only?.value||0)}</div><b>${escHtml(only?.owner||'—')} · Week ${only?.week||'—'}</b><p class="sub">Winning FAB spent on players from the first chopped roster in its first Wednesday waiver run.${only?.share!==null?` <b>${(only.share*100).toFixed(1)}% of league FAB</b> entering that waiver run (${money0(only.leagueFab)} available).`:''}</p></div>
         <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid on a player released by the Week 1 corpse.${bitePct!==null?` ${Math.round(bitePct*100)}% of ${escHtml(bite.acquired_by||'buyer')}'s pre-waiver FAB.`:''}</p></div>`;
     }else{
       econ.innerHTML=`
-        <div class="panel"><div class="kicker">Most valuable corpse</div><div class="metric">${money0(most?.value||0)}</div><b>${escHtml(most?.owner||'—')} · Week ${most?.week||'—'}</b><p class="sub">Winning FAB spent on players from that chopped roster in its first Wednesday waiver run.</p></div>
+        <div class="panel"><div class="kicker">Most valuable corpse</div><div class="metric">${money0(most?.value||0)}</div><b>${escHtml(most?.owner||'—')} · Week ${most?.week||'—'}</b><p class="sub">Winning FAB spent on players from that chopped roster in its first Wednesday waiver run.${most?.share!==null?` <b>${(most.share*100).toFixed(1)}% of league FAB</b> entering that run.`:''}</p></div>
         <div class="panel"><div class="kicker">Cheapest corpse</div><div class="metric">${money0(cheap?.value||0)}</div><b>${escHtml(cheap?.owner||'—')} · Week ${cheap?.week||'—'}</b><p class="sub">Unclaimed corpse players count as $0; later-week adds do not count.</p></div>
         <div class="panel"><div class="kicker">Average corpse value</div><div class="metric">${money0(avg)}</div><b>${corpses.length} recorded corpses</b><p class="sub">Average market value created by the chop, measured by actual first-run winning bids.</p></div>
         <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">${money0(bite?.winning_bid||0)}</div><b>${escHtml(bite?.player_name||'—')}</b><p class="sub">Largest winning FAB bid so far on a player released by a chopped roster.${bitePct!==null?` ${Math.round(bitePct*100)}% of ${escHtml(bite.acquired_by||'buyer')}'s pre-waiver FAB.`:''}</p></div>`;

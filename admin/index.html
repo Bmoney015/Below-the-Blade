@@ -484,12 +484,14 @@ async function saveWaiverRun(){
     if(r.next_highest_bid!==null && r.next_highest_bid>r.winning_bid)return setStatus('waiverStatus',`Next-highest bid cannot exceed the winning bid for ${r.player_name}.`,false);
   }
   setStatus('waiverStatus','Saving Wednesday run...');
-  let x=await sb.from('waiver_transactions').delete().eq('chop_week',week); if(x.error)return setStatus('waiverStatus',x.error.message,false);
+  // FK guard: create/update the parent waiver run BEFORE touching child transactions.
+  // This makes Save Wednesday Run self-healing if a waiver_runs row is ever missing.
+  let x=await sb.from('waiver_runs').upsert({chop_week:week,chopped_owner:currentChoppedOwner,saved_at:new Date().toISOString()},{onConflict:'chop_week'}); if(x.error)return setStatus('waiverStatus',x.error.message,false);
+  x=await sb.from('waiver_transactions').delete().eq('chop_week',week); if(x.error)return setStatus('waiverStatus',x.error.message,false);
   if(rows.length){
     const payload=rows.map(r=>({...r,chop_week:week,chopped_owner:currentChoppedOwner,updated_at:new Date().toISOString()}));
     x=await sb.from('waiver_transactions').insert(payload); if(x.error)return setStatus('waiverStatus',x.error.message,false);
   }
-  x=await sb.from('waiver_runs').upsert({chop_week:week,chopped_owner:currentChoppedOwner,saved_at:new Date().toISOString()},{onConflict:'chop_week'}); if(x.error)return setStatus('waiverStatus',x.error.message,false);
   $('waiverPill').textContent=`${rows.length} CLAIMS SAVED`; $('waiverPill').className='pill final';
   updateWaiverPreview();
   const corpse=currentCorpseNames(); const corpseValue=rows.filter(r=>corpse.has(r.player_name.toLowerCase())).reduce((s,r)=>s+Number(r.winning_bid||0),0);
