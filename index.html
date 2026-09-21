@@ -2263,11 +2263,14 @@ async function loadLiveFinalSweat(){
   const lineLabel=document.getElementById('sweatLineLabel');
   document.getElementById('sweatChopLine').textContent=fmtScore(survivalLine===null?currentBlade:survivalLine);
   if(lineLabel) lineLabel.textContent=survivalLine===null?'CURRENT BLADE':'SURVIVAL LINE';
-  document.getElementById('sweatSafeCount').textContent=
-    safeCount>0 ? `${safeCount} mathematically safe · ${sweat.length} still sweating`
-                : `${sweat.length} teams still unresolved`;
-  document.getElementById('sweatIntro').textContent=
-    `${sweat.length} ${sweat.length===1?'team is':'teams are'} still mathematically exposed to the blade.`;
+  const lockedChop=(sweat.length===1 && Number(sweat[0].starters_remaining)===0);
+  document.getElementById('sweatSafeCount').textContent= lockedChop
+    ? `${safeCount} mathematically safe · chop decided`
+    : (safeCount>0 ? `${safeCount} mathematically safe · ${sweat.length} still sweating`
+                   : `${sweat.length} teams still unresolved`);
+  document.getElementById('sweatIntro').textContent= lockedChop
+    ? `${sweat[0].owner_name} is locked into the bottom score with no starters remaining.`
+    : `${sweat.length} ${sweat.length===1?'team is':'teams are'} still mathematically exposed to the blade.`;
 
   // LIVE Survival Board overlay: completed/history metrics remain finalized-only,
   // but the card status, bar and mini-line should reflect the current live week.
@@ -2341,7 +2344,7 @@ async function loadLiveFinalSweat(){
         </div>
         <div class="sweat-context">
           Current live rank: <b>#${r._rank} / ${entered.length}</b>
-          ${bountyTarget?` · bounty chop would add <b>$${bounty}</b>`:''}
+          ${bountyTarget?` · ${lockedChop && onBlade ? `bounty locked: <b>$${bounty}</b> will be added` : `bounty chop would add <b>$${bounty}</b>`}`:''}
           ${(r.projected_total!==null && r.projected_total!==undefined && r.projected_total!=='' && Number.isFinite(Number(r.projected_total)))?`<span class="sweat-projected">PROJECTED ${fmtScore(r.projected_total)}</span>`:''}
         </div>
       </div>
@@ -2351,9 +2354,15 @@ async function loadLiveFinalSweat(){
 
   const bladeOwner=[...entered].sort((a,b)=>Number(a.current_score)-Number(b.current_score))[0];
   const bountyOnBlade=(bladeOwner.owner_name==='Pete'||bladeOwner.owner_name==='Tony Squares');
-  let story=`<b>Show talking point:</b> ${escHtml(bladeOwner.owner_name)} currently sits on the blade at <b>${fmtScore(bladeOwner.current_score)}</b>.`;
-  if(bountyOnBlade) story+=` A chop tonight would add <b>$${bounty}</b> to the prize pool.`;
-  if(safeCount>0) story+=` Meanwhile, <b>${safeCount}</b> ${safeCount===1?'team is':'teams are'} already mathematically safe.`;
+  let story;
+  if(lockedChop){
+    story=`<b>Show talking point:</b> ${escHtml(bladeOwner.owner_name)} is locked into the bottom score at <b>${fmtScore(bladeOwner.current_score)}</b> with no starters remaining. The chop is mathematically decided; the week remains live pending finalization/stat corrections.`;
+    if(bountyOnBlade) story+=` The <b>$${bounty}</b> bounty is locked in and will be added to the prize pool once the week is finalized.`;
+  }else{
+    story=`<b>Show talking point:</b> ${escHtml(bladeOwner.owner_name)} currently sits on the blade at <b>${fmtScore(bladeOwner.current_score)}</b>.`;
+    if(bountyOnBlade) story+=` A chop tonight would add <b>$${bounty}</b> to the prize pool.`;
+    if(safeCount>0) story+=` Meanwhile, <b>${safeCount}</b> ${safeCount===1?'team is':'teams are'} already mathematically safe.`;
+  }
   document.getElementById('sweatStory').innerHTML=story;
 }
 
