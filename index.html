@@ -694,7 +694,7 @@ select,input{
 
   <div class="sweat-story">
     <div class="story-icon">🔥</div>
-    <div id="sweatStory"><b>Show talking point:</b> Loading live-week context…</div>
+    <div id="sweatStory">Loading live-week context…</div>
   </div>
 </section>
 
@@ -2356,10 +2356,10 @@ async function loadLiveFinalSweat(){
   const bountyOnBlade=(bladeOwner.owner_name==='Pete'||bladeOwner.owner_name==='Tony Squares');
   let story;
   if(lockedChop){
-    story=`<b>Show talking point:</b> ${escHtml(bladeOwner.owner_name)} is locked into the bottom score at <b>${fmtScore(bladeOwner.current_score)}</b> with no starters remaining. The chop is mathematically decided; the week remains live pending finalization/stat corrections.`;
+    story=`${escHtml(bladeOwner.owner_name)} is locked into the bottom score at <b>${fmtScore(bladeOwner.current_score)}</b> with no starters remaining. The chop is mathematically decided; the week remains live pending finalization/stat corrections.`;
     if(bountyOnBlade) story+=` The <b>$${bounty}</b> bounty is locked in and will be added to the prize pool once the week is finalized.`;
   }else{
-    story=`<b>Show talking point:</b> ${escHtml(bladeOwner.owner_name)} currently sits on the blade at <b>${fmtScore(bladeOwner.current_score)}</b>.`;
+    story=`${escHtml(bladeOwner.owner_name)} currently sits on the blade at <b>${fmtScore(bladeOwner.current_score)}</b>.`;
     if(bountyOnBlade) story+=` A chop tonight would add <b>$${bounty}</b> to the prize pool.`;
     if(safeCount>0) story+=` Meanwhile, <b>${safeCount}</b> ${safeCount===1?'team is':'teams are'} already mathematically safe.`;
   }
