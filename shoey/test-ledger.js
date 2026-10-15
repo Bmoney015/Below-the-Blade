@@ -1,0 +1,15 @@
+/* Test-only commissioner fixture editor. No network calls. */
+(()=>{
+ const key='btb_test_sandbox_v1', $=id=>document.getElementById(id);
+ if(!$('shoeyLedgerWeek'))return;
+ const select=$('shoeyLedgerWeek'), owner=$('shoeyLedgerOwner'),score=$('shoeyLedgerScore'),roster=$('shoeyLedgerRoster'),msg=$('shoeyLedgerMessage');
+ const read=()=>{try{return JSON.parse(localStorage.getItem(key)||'{}')}catch{return {}}};
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ select.innerHTML=Array.from({length:17},(_,i)=>`<option value="${i+1}">Week ${i+1}</option>`).join('');
+ function load(){const db=read(),w=Number(select.value),c=(db.finalized_chops||[]).find(x=>Number(x.week)===w);owner.value=c?.owner_name||'';score.value=c?.score??'';roster.value=(db.chopped_rosters||[]).filter(x=>Number(x.week)===w&&x.owner_name===c?.owner_name).map(x=>x.player_name).join('\n');msg.textContent=c?'Loaded local Test elimination record.':'No finalized elimination for this week.';}
+ function sync(){if($('shoeyAdminWeek')){$('shoeyAdminWeek').value=select.value;$('shoeyAdminWeek').dispatchEvent(new Event('change'));}}
+ select.addEventListener('change',()=>{load();sync()});
+ $('shoeyLedgerSave').addEventListener('click',(event)=>{event.preventDefault();msg.textContent='Saving Test elimination…';const w=Number(select.value),name=owner.value.trim(),raw=score.value.trim();if(!name||raw===''||!Number.isFinite(Number(raw))||Number(raw)<0){msg.textContent='Enter a manager and a valid nonnegative elimination score.';return;}const names=roster.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);if(names.length!==new Set(names.map(s=>s.toLowerCase())).size){msg.textContent='Duplicate player names in roster. Please correct.';return;}const db=read();db.finalized_chops=(db.finalized_chops||[]).filter(x=>Number(x.week)!==w);db.finalized_chops.push({week:w,owner_name:name,score:Number(raw)});db.chopped_rosters=(db.chopped_rosters||[]).filter(x=>Number(x.week)!==w);db.chopped_rosters.push(...names.map(player_name=>({week:w,owner_name:name,player_name})));try{localStorage.setItem(key,JSON.stringify(db));msg.textContent='✓ Saved Week '+w+' for '+name+'. Open the Shoey Wall on this same Test website and refresh it.';msg.style.color='#8ee5a2';}catch{msg.textContent='Save failed: browser storage is blocked or full. Check browser privacy settings.';msg.style.color='#ffb2a6'}});
+ $('shoeyLedgerClear').addEventListener('click',()=>{const w=Number(select.value);if(!confirm('Remove the Week '+w+' TEST elimination record? This does not remove the Shoey exhibit.'))return;const db=read();db.finalized_chops=(db.finalized_chops||[]).filter(x=>Number(x.week)!==w);db.chopped_rosters=(db.chopped_rosters||[]).filter(x=>Number(x.week)!==w);localStorage.setItem(key,JSON.stringify(db));load();msg.textContent='Test elimination removed. Shoey exhibit retained.'});
+ if($('shoeyAdminWeek')){select.value=$('shoeyAdminWeek').value||'1';$('shoeyAdminWeek').addEventListener('change',()=>{select.value=$('shoeyAdminWeek').value;load()})}load();
+})();

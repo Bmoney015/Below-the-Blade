@@ -1,0 +1,36 @@
+/* Shoey Wall V2 — immersive exhibit environment, isolated to shoey section */
+#page-shoey{max-width:1580px;padding-left:12px;padding-right:12px}
+#page-shoey .shoey-museum{position:relative;isolation:isolate;overflow:hidden;border:9px solid #24150d;border-radius:5px;padding:0 24px 35px;color:#f7e7c9;background-color:#1b1411;background-image:linear-gradient(90deg,#0005 0%,transparent 16%,transparent 84%,#0007 100%),radial-gradient(ellipse at 50% 4%,#c18a4230,transparent 42%),repeating-linear-gradient(0deg,transparent 0px,transparent 43px,#090706b8 44px,#090706b8 47px,transparent 48px,transparent 50px),repeating-linear-gradient(90deg,#2c2019 0px,#392820 72px,#241913 142px,#3b2b21 213px,#231912 285px);box-shadow:inset 0 0 90px #000c,0 14px 32px #0009}
+#page-shoey .shoey-museum:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.48;pointer-events:none;background-image:repeating-linear-gradient(90deg,transparent 0px,transparent 141px,#0a0807b0 143px,#0a0807b0 146px,transparent 149px,transparent 290px),repeating-linear-gradient(0deg,#ffffff09 0px,transparent 3px,transparent 10px,#00000020 17px,transparent 27px);mix-blend-mode:overlay}
+#page-shoey .shoey-museum-header{position:relative;margin:0 -24px;padding:36px 35px 28px;min-height:200px;background:linear-gradient(180deg,#090908c9,#24150db5 85%,#0d0906c9);border-bottom:12px ridge #634021;box-shadow:0 12px 18px #000c;z-index:1}
+#page-shoey .shoey-title-group h2{font-size:clamp(46px,6vw,90px);font-weight:900;letter-spacing:.055em;color:#f6d4a0;text-shadow:0 2px 0 #fff4d2,0 4px 0 #9a6034,0 7px 0 #3b1c0c,0 11px 13px #000}
+#page-shoey .shoey-tagline{padding:9px 30px;background:linear-gradient(#8a5123,#251509 55%,#4c2d15);border:2px ridge #c79751;box-shadow:0 4px 8px #000d, inset 0 1px #f7c9817a}
+#page-shoey .shoey-counter{width:160px;min-width:135px;border:3px ridge #936335;padding:12px 7px;background:radial-gradient(ellipse at 50% 0%,#a467244a,#0a0908 80%);box-shadow:inset 0 0 19px #e3a44b22,0 6px 16px #000b}
+#page-shoey .shoey-neon{font-size:38px}
+#page-shoey .shoey-museum-note{font:italic 13px Georgia,serif;color:#d8b887;margin:20px 0 3px;text-shadow:0 2px 4px #000}
+#page-shoey .shoey-shelves{grid-template-columns:repeat(4,minmax(0,1fr));gap:22px 24px;padding:48px 10px 18px}
+#page-shoey .shoey-exhibit{padding:0 7px 29px;filter:drop-shadow(0 8px 7px #000b)}
+#page-shoey .shoey-exhibit:before{content:"";position:absolute;z-index:0;left:-10px;right:-10px;top:9px;height:160px;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,#ffc16c5e 0%,#d8872630 27%,transparent 72%);opacity:.8}
+#page-shoey .shoey-exhibit:after{height:23px;bottom:0;left:-15px;right:-15px;border-top:3px solid #c18b52;border-bottom:4px solid #160b06;background:linear-gradient(180deg,#a06c39 0%,#72431e 24%,#4a270f 65%,#1d1009 100%);box-shadow:0 8px 12px #000e,inset 0 2px 1px #e6b16a6b}
+#page-shoey .shoey-lamp{z-index:2;width:57px;height:16px;margin-bottom:15px;border:2px solid #a16b34;border-radius:4px 4px 15px 15px;background:linear-gradient(#4a2d14,#d0a25c 45%,#4d2b10);box-shadow:0 0 4px #f3a958,0 10px 24px 7px #ffb35c78,0 21px 38px 18px #ffc06d29}
+#page-shoey .shoey-frame{position:relative;z-index:1;aspect-ratio:1.4;border:12px ridge #88552a;outline:2px solid #291408;outline-offset:1px;background:#100b09;box-shadow:inset 0 0 0 4px #d5a366,inset 0 0 20px #000,0 4px 3px #000,0 13px 18px #000d,0 0 24px #efaa4a24;transition:transform .18s,box-shadow .18s}
+#page-shoey .shoey-frame:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(145deg,#ffddaa25,transparent 34%,#0003 100%)}
+#page-shoey .shoey-frame img{object-fit:contain;background:#0c0b0a}
+#page-shoey button.shoey-exhibit:hover .shoey-frame,#page-shoey button.shoey-exhibit:focus-visible .shoey-frame{transform:translateY(-4px);box-shadow:inset 0 0 0 4px #d5a366,0 12px 25px #000e,0 0 25px #ffb86255}
+#page-shoey .shoey-plaque{z-index:3;min-width:74%;max-width:96%;margin-top:-3px;padding:9px 8px 7px;border:3px ridge #9e672f;border-radius:3px;background:linear-gradient(160deg,#f2c880 0%,#bb8542 35%,#f2c27a 50%,#98632e 100%);box-shadow:inset 0 1px #ffe8b2,0 4px 10px #000e}
+#page-shoey .shoey-plaque b{font:900 13px Georgia,serif}
+#page-shoey .shoey-plaque small{font-size:10px}
+#page-shoey .shoey-vacant .shoey-frame{border-color:#503b28;background:radial-gradient(ellipse at 50% 0%,#29231d,#090908 78%)}
+#page-shoey .shoey-vacant:before{opacity:.26}
+#page-shoey .shoey-vacant .shoey-lamp{opacity:.55;box-shadow:0 6px 18px #f0a2482b}
+#page-shoey .shoey-vacant .shoey-plaque{background:linear-gradient(#715337,#3b291c);border-color:#64452d;color:#d2b28a}
+#page-shoey .shoey-shoe-silhouette{font-size:66px;filter:grayscale(1) brightness(.15);opacity:.8}
+#page-shoey .shoey-museum-footer{padding:20px 5px 5px;text-shadow:0 2px 6px #000}
+/* Open exhibit retains existing JS and records, with museum display treatment */
+.shoey-lightbox{background:#060403ed;backdrop-filter:blur(5px)}
+.shoey-detail{border:8px ridge #956333;border-radius:4px;background:linear-gradient(135deg,#231a14,#0d1219 58%);box-shadow:0 25px 100px #000,0 0 0 2px #1a0b06}
+.shoey-detail-photo{background:radial-gradient(ellipse at 50% 45%,#6e472635,#070809 70%)}
+.shoey-detail-photo img{border:12px ridge #95612f;box-shadow:0 12px 30px #000c}
+.shoey-detail-content h2{color:#f0d5a6;text-shadow:0 3px 5px #000}
+@media(max-width:1000px){#page-shoey .shoey-shelves{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 13px}}
+@media(max-width:680px){#page-shoey .shoey-museum{padding:0 12px 24px;border-width:5px}#page-shoey .shoey-museum-header{margin:0 -12px;padding:24px 10px;min-height:150px}#page-shoey .shoey-title-group h2{font-size:clamp(28px,8vw,48px)}#page-shoey .shoey-counter{min-width:78px;width:85px;padding:8px 2px}#page-shoey .shoey-shelves{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 8px;padding:28px 0}#page-shoey .shoey-frame{border-width:7px}#page-shoey .shoey-plaque b{font-size:11px}#page-shoey .shoey-plaque small{font-size:8px}#page-shoey .shoey-exhibit:after{left:-5px;right:-5px}}

@@ -1,0 +1,29 @@
+BELOW THE BLADE — SHOEY WALL: TEST ELIMINATION LINKAGE BUILD
+
+TEST ONLY. This package does not connect to Supabase or modify Production.
+
+What's new:
+- Commissioner admin page includes a Test Elimination Data editor (week, eliminated manager, score, chopped roster).
+- Records are saved in the existing btb_test_sandbox_v1 browser-local data store.
+- Shoey Wall already reads finalized_chops and chopped_rosters, and now has a practical editor to supply matching test records.
+- Future finalized eliminations (Weeks 5–17) automatically create pending Shoey exhibits.
+- Existing exhibits, screenshots, commissioner edits, and status classifications remain unchanged.
+
+IMPORTANT: Existing Test demo elimination names do NOT match Shoey exhibits in Weeks 1–4.
+To test linking, open admin/, select Week 1, enter Pete and a test score and roster, save;
+then refresh the public page, open Pete's exhibit, and verify the score/roster.
+Repeat for other weeks if desired. Do not treat simulated scores as historical facts.
+
+Test instructions:
+1. Deploy entire ZIP to the Test branch only (keep relative paths).
+2. Open Test admin/ in the same browser/origin as Test public page.
+3. Under Test Elimination Data, select a week and save manager, score, roster.
+4. Refresh public Test page and click the matching Shoey card.
+5. Test Week 7 or 8 to verify automatic pending cards after a finalized elimination.
+6. Use Remove Test Elimination to undo a simulated finalized chop; exhibit records remain.
+
+LIMITATIONS:
+- Browser-local storage is not shared across devices.
+- This build does not add Supabase persistence, upload storage, or production SQL.
+- Test fixture edits may affect other Test admin features that read the same local simulated ledger.
+- For a clean baseline, use a separate Test browser profile or reset its local storage deliberately.
