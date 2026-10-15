@@ -744,5 +744,14 @@ $('saveWaiverRunBtn').addEventListener('click',saveWaiverRun);
 $('saveGhostBtn').addEventListener('click',saveGhostWeek);
 renderRows();initClient();
 </script>
-</body>
+<section id="shoeyProductionAdmin" class="hidden" style="margin:28px auto;max-width:1050px;padding:24px;background:#142636;border:1px solid #b58a49;border-radius:12px;color:#e7edf1">
+<h2 style="color:#e9b967">👟 Shoey Wall of Shame · Commissioner</h2><p>Production · Changes save to Supabase and are visible to the league. Finalized eliminations supply scores and rosters automatically.</p>
+<label>Week <select id="shoeyAdminWeek"></select></label>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:15px 0">
+<label>Manager name<input id="shoeyAdminName"></label><label>Status<select id="shoeyAdminStatus"><option value="pending">Awaiting Evidence</option><option value="confirmed">Confirmed Shoey</option><option value="sidestep">Successful Sidestep</option><option value="abandoned">Abandonment</option></select></label>
+<label>Exhibit title<input id="shoeyAdminTitle"></label><label>Original video URL<input id="shoeyAdminVideo" placeholder="https://youtube.com/..."></label><label>Screenshot (optional)<input id="shoeyAdminPhoto" type="file" accept="image/*"></label></div>
+<label>Description<textarea id="shoeyAdminDesc" rows="3" style="width:100%"></textarea></label>
+<div style="display:flex;align-items:center;gap:14px;margin:16px 0"><button id="shoeyAdminSave" type="button" style="background:#d7a85e;color:#10202e;padding:12px 20px;font-weight:bold">Save Exhibit</button><span id="shoeyAdminMessage" aria-live="polite"></span></div>
+<p style="font-size:12px">Photo uploads are stored in the dedicated Supabase Shoey bucket. Existing screenshots are retained unless you select a replacement.</p>
+</section><script src="../shoey/shoey-production-admin.js"></script></body>
 </html>
