@@ -649,6 +649,49 @@ select,input{
 </style>
 <style>
 .waiver-market-shell{padding:22px}.waiver-market-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap}.waiver-market-head h2{margin:3px 0 5px;font-size:34px}.waiver-market-badge{background:#0b1721;border:1px solid #52616b;border-radius:14px;padding:10px 14px;text-align:center;min-width:150px}.waiver-market-badge small{display:block;color:#a9bac6;font-size:9px;font-weight:900;letter-spacing:.12em}.waiver-market-badge strong{display:block;font-size:19px;margin-top:3px}.waiver-subnav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 14px}.waiver-subbtn{border:1px solid #405362;background:#172632;color:#dce5ea;border-radius:999px;padding:8px 13px;font-weight:900;cursor:pointer}.waiver-subbtn.active{background:#f7f4ed;color:#10202c;border-color:#f7f4ed}.waiver-view{display:none}.waiver-view.active{display:block}.waiver-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}.waiver-kpi{background:#15232e;border:1px solid #344755;border-radius:14px;padding:14px}.waiver-kpi small{display:block;color:#a9bac6;font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.waiver-kpi b{display:block;font-size:27px;margin-top:4px;color:#f7f4ed}.waiver-kpi span{display:block;color:#a9bac6;font-size:10px;margin-top:4px;line-height:1.35}.waiver-panel{background:#15232e;border:1px solid #344755;border-radius:14px;padding:16px;margin-top:12px}.waiver-panel-head{display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:10px}.waiver-panel h3{margin:2px 0 0}.waiver-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.waiver-control label{display:block;font-size:9px;color:#a9bac6;font-weight:900;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}.waiver-control input,.waiver-control select{background:#0f1b25;color:#f7f4ed;border:1px solid #405362;border-radius:8px;padding:8px 9px}.waiver-table-wrap{overflow-x:auto;border:1px solid #344755;border-radius:11px}.waiver-market-table{width:100%;border-collapse:collapse;min-width:760px;background:#15232e}.waiver-market-table th,.waiver-market-table td{padding:10px 9px;border-bottom:1px solid #31434f;text-align:left}.waiver-market-table th{background:#0b1721;color:#f2c14e;font-size:9px;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}.waiver-sort{cursor:pointer;user-select:none}.waiver-sort:hover{background:#122532}.waiver-sort .sort-arrow{margin-left:5px;color:#8fa2af}.waiver-sort.active .sort-arrow{color:#f2c14e}.waiver-buyers{display:flex;gap:5px;flex-wrap:wrap}.waiver-buyer-chip{display:inline-block;border:1px solid #405362;border-radius:999px;padding:2px 6px;font-size:9px;color:#dce5ea;background:#101d27}.waiver-market-table td{font-size:12px}.waiver-market-table tr:last-child td{border-bottom:0}.waiver-money{font-weight:950;font-variant-numeric:tabular-nums}.waiver-muted{color:#a9bac6}.waiver-corpse{display:inline-block;margin-left:5px;padding:2px 5px;border:1px solid #72525a;border-radius:999px;color:#ef9c95;font-size:8px;font-weight:950;letter-spacing:.05em;vertical-align:1px}.waiver-player-row{cursor:pointer}.waiver-player-row:hover td{background:#192936}.waiver-history-row td{padding:0!important;background:#101d27}.waiver-history{display:none;padding:10px 14px 12px}.waiver-history.open{display:block}.waiver-history-item{display:grid;grid-template-columns:58px minmax(120px,1fr) 90px 120px;gap:9px;padding:7px 0;border-bottom:1px solid #2d3d48;font-size:11px;align-items:center}.waiver-history-item:last-child{border-bottom:0}.waiver-history-item b{text-align:right}.waiver-expand{color:#e3b64d;font-weight:950}.waiver-eff-note{font-size:10px;color:#a9bac6;line-height:1.45;margin-top:9px}.waiver-empty{padding:24px;text-align:center;color:#a9bac6;border:1px dashed #405362;border-radius:12px}@media(max-width:900px){.waiver-kpis{grid-template-columns:1fr 1fr}}@media(max-width:560px){.waiver-kpis{grid-template-columns:1fr}.waiver-market-head h2{font-size:29px}.waiver-history-item{grid-template-columns:48px 1fr 70px}.waiver-history-item span:last-child{display:none}}
+
+/* Production Shoey Wall — gallery and exhibit dialog */
+.shoey-new{padding:32px 22px;background:#142431;border:1px solid #385064;border-radius:20px;margin:28px 0;color:#f5f6f7}
+.shoey-hero{text-align:center;padding:12px 0 10px}
+.shoey-hero h2{font-size:clamp(28px,4vw,47px);margin:14px 0 10px;color:#f7f7f7;font-weight:900}
+.shoey-motto{color:#fff;font-size:17px;letter-spacing:.06em}
+.shoey-scoreboard{display:flex;justify-content:center;gap:clamp(16px,4vw,70px);flex-wrap:wrap;margin:22px auto 25px;text-align:center}
+.shoey-scoreboard>div{display:flex;flex-direction:column;gap:6px;min-width:145px}
+.shoey-scoreboard strong{font-size:29px;color:#fff;font-weight:900}
+.shoey-scoreboard span{font-size:11px;letter-spacing:.08em;font-weight:800;color:#a8b8c7}
+.shoey-new .shoey-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin:22px 0 30px}
+.shoey-new .shoey-card{background:#0d1b29;border:1px solid #395165;border-radius:13px;overflow:hidden;min-width:0}
+.shoey-new .shoey-photo-btn{display:block;width:100%;padding:0;border:0;cursor:pointer;background:#101e2c;position:relative;color:#fff;min-height:220px}
+.shoey-new .shoey-photo-btn img{display:block;width:100%;height:235px;object-fit:cover}
+.shoey-new .shoey-card-body{padding:16px}
+.shoey-new .shoey-card-body h3{font-size:21px;color:#fff;margin:0 0 7px}
+.shoey-new .shoey-card-body p{color:#aebeca;font-size:13px;line-height:1.5}
+.shoey-new .shoey-status,.shoey-new-modal .shoey-status{display:inline-block;border-radius:5px;padding:5px 9px;background:#285442;color:#d7ffeb;font-size:11px;font-weight:800;margin-top:9px}
+.shoey-new .shoey-status.sidestep,.shoey-new-modal .shoey-status.sidestep{background:#5c3c47;color:#ffe6eb}
+.shoey-new .shoey-status.pending,.shoey-new-modal .shoey-status.pending{background:#554b31;color:#ffe7a6}
+.shoey-new .shoey-week{position:absolute;top:12px;left:12px;background:#eab967;color:#10202e;font-size:12px;font-weight:900;padding:6px 9px;border-radius:6px}
+.shoey-collection{max-width:900px;margin:10px auto 0;text-align:center}
+.shoey-collection>div:first-child{display:flex;justify-content:space-between;gap:10px;color:#e9bb70;font-size:13px}
+.shoey-track{height:12px;border-radius:20px;background:#283f50;margin:12px 0;overflow:hidden}
+#shoeyProgress{height:100%;background:#e9b967;transition:width .2s}
+.shoey-collection small{color:#aebdca}
+.shoey-new-modal[hidden]{display:none!important}
+.shoey-new-modal{position:fixed;inset:0;z-index:99999;background:#000c;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.shoey-new-detail{position:relative;display:grid;grid-template-columns:1fr 1fr;max-width:1100px;width:100%;max-height:90vh;overflow:auto;background:#10202d;border:1px solid #e9b967;border-radius:14px;color:#fff}
+.shoey-detail-image{background:#08141f;display:flex;align-items:center;justify-content:center;padding:25px}
+.shoey-detail-image img{max-width:100%;max-height:72vh;object-fit:contain;border-radius:5px}
+.shoey-detail-info{padding:42px 30px 28px}
+.shoey-detail-info h2{font-size:36px;margin:12px 0}
+.shoey-detail-info p{color:#b1c0cb;line-height:1.6}
+.shoey-new-close{position:absolute;right:12px;top:12px;border:1px solid #e9b967;background:#0c1926;color:white;font-size:27px;border-radius:7px;width:40px;height:40px;cursor:pointer}
+.shoey-detail-stats{display:flex;gap:10px;margin:20px 0}
+.shoey-detail-stats>div{flex:1;background:#1d3545;border:1px solid #3a5365;border-radius:8px;padding:12px}
+.shoey-detail-stats small{display:block;font-size:10px;color:#b6c6d2;margin-bottom:8px}
+.shoey-detail-stats strong{font-size:24px}
+#shoeyNewRoster>div{padding:9px 5px;border-bottom:1px solid #355064;color:#d8e2eb}
+.shoey-video-link{display:inline-block;background:#e9b967;color:#10202e;font-weight:900;text-decoration:none;padding:12px 18px;border-radius:8px;margin-top:20px}
+@media(max-width:1050px){.shoey-new .shoey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.shoey-new .shoey-grid{grid-template-columns:1fr}.shoey-new-detail{grid-template-columns:1fr}.shoey-detail-image img{max-height:40vh}.shoey-detail-info{padding:25px 18px}.shoey-scoreboard>div{min-width:90px}}
 </style>
 </head>
 <body>
@@ -1508,11 +1551,7 @@ function animateReplayWeek(){
           const survivor=sorted.at(-2);
           const margin=((weekData[survivor]||0)-(weekData[cut]||0)).toFixed(1);
 
-          if(cut==="Nez" && replayWeek===5){
-            document.getElementById("replayStory").textContent=`🤯 Nez entered Week 5 leading the entire league in season points — then scored ${weekData[cut].toFixed(1)} and got chopped. One bad week erased a dominant start.`;
-          }else{
-            document.getElementById("replayStory").textContent=`🪓 ${cut} chopped at ${weekData[cut].toFixed(1)} · missed safety by ${margin} pts`;
-          }
+          document.getElementById("replayStory").textContent=`🪓 ${cut} chopped at ${weekData[cut].toFixed(1)} · missed safety by ${margin} pts`;
 
           // Wait for tile movement, then chop/fade, then show reveal.
           const slideDelay=Math.max(900,1900/speed);
