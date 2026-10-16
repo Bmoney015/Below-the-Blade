@@ -626,6 +626,56 @@ select,input{
 
 /* Shoey Wall of Shame */
 .shoey-hero{text-align:center;padding:32px 18px 18px}.shoey-hero h2{font-size:clamp(27px,4vw,43px);margin:7px 0;color:#f4ead4}.shoey-hero .sub{max-width:650px;margin:0 auto;color:#aebdca}.shoey-eyebrow{color:#e9b967;letter-spacing:.16em;font-size:12px;font-weight:900}.shoey-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:22px 0 28px}.shoey-card{background:#142434;border:1px solid #344b5d;border-radius:15px;overflow:hidden;min-width:0;box-shadow:0 8px 26px #0003}.shoey-photo-btn{display:block;width:100%;padding:0;border:0;background:#0a1420;cursor:zoom-in;position:relative}.shoey-photo-btn img{width:100%;height:235px;object-fit:cover;display:block;transition:transform .2s}.shoey-photo-btn:hover img{transform:scale(1.035)}.shoey-week{position:absolute;top:12px;left:12px;background:#e9b967;color:#17202b;padding:5px 9px;border-radius:6px;font-weight:900;font-size:11px;letter-spacing:.08em}.shoey-card-body{padding:16px}.shoey-card h3{margin:0 0 5px;font-size:21px;color:#fff}.shoey-card p{color:#b5c5d1;font-size:13px;line-height:1.5;margin:8px 0 0}.shoey-epithet{color:#e9b967;font-size:12px;font-weight:800;letter-spacing:.04em}.shoey-dodger{display:inline-block;background:#643b45;color:#ffe4e6;border:1px solid #c67586;border-radius:5px;padding:3px 7px;font-size:10px;font-weight:900;margin-top:8px}.shoey-footer{text-align:center;color:#8fa5b7;font-size:13px;margin:14px 0 30px}.shoey-lightbox{position:fixed;inset:0;z-index:10000;background:rgba(3,8,15,.94);display:none;align-items:center;justify-content:center;flex-direction:column;padding:24px}.shoey-lightbox.open{display:flex}.shoey-lightbox img{max-width:min(94vw,1050px);max-height:77vh;object-fit:contain;border-radius:8px}.shoey-lightbox-caption{color:#fff;font-weight:800;margin-top:14px;text-align:center}.shoey-lightbox-close{position:absolute;right:22px;top:15px;border:1px solid #657789;border-radius:9px;background:#182a3b;color:white;font-size:24px;padding:5px 13px;cursor:pointer}@media(max-width:1000px){.shoey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.shoey-grid{grid-template-columns:1fr}.shoey-photo-btn img{height:300px}}
+
+/* Dashboard hierarchy test: contestant faces lead; completed bounties compact */
+.dashboard-survival-first{margin:14px 0 24px}
+.dashboard-survival-first>.section-title{margin-top:0}
+.grid:has(>.money-story-grid){display:block!important}
+.money-story-grid{display:grid!important;grid-template-columns:minmax(230px,.72fr) minmax(400px,1.28fr)!important;gap:14px!important;align-items:stretch}
+.bounty-watch.bounty-settled{padding:16px!important;min-height:0}
+.bounty-settled .kicker{margin-bottom:10px}
+.bounty-settled>h2,.bounty-settled>.sub,.bounty-settled .bounty-duo,.bounty-settled .bounty-foot{display:none!important}
+.bounty-settled-summary{display:none}
+.bounty-settled .bounty-settled-summary{display:block}
+.bounty-settled-top{display:flex;align-items:center;gap:12px}
+.bounty-settled-top strong{font-size:27px;color:#f5eee2}
+.bounty-settled-top span{font-size:11px;font-weight:900;letter-spacing:.08em;color:#a8c2b7}
+.bounty-settled-money{font-size:26px;font-weight:950;color:#e8b65c;margin:12px 0 6px}
+.bounty-settled-money small{display:block;font-size:11px;font-weight:500;color:#adbfca}
+.bounty-settled-people{font-size:12px;color:#d9e2e8;margin-top:12px}
+.v18-story-strip{margin-top:22px}
+#grimReaperLive{margin-top:10px!important}
+#grimReaperLiveBody>div{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px!important}
+#grimReaperLiveBody>div>div{align-items:flex-start}
+@media(max-width:850px){.money-story-grid{grid-template-columns:1fr!important}}
+
+/* Dashboard V2: Equity leads; completed bounty becomes a full-width compact ribbon. */
+.money-story-grid{grid-template-columns:minmax(0,1fr)!important;align-items:start!important}
+.money-story-grid>.equity-panel{grid-row:1}
+.money-story-grid>.bounty-watch{grid-row:2}
+.bounty-watch.bounty-settled{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:14px 20px!important}
+.bounty-settled .kicker{margin:0!important;white-space:nowrap}
+.bounty-settled .bounty-settled-summary{display:flex!important;align-items:center;justify-content:space-between;gap:18px;flex:1;flex-wrap:wrap}
+.bounty-settled-top strong{font-size:21px}
+.bounty-settled-money{font-size:23px;margin:0;white-space:nowrap}
+.bounty-settled-money small{display:inline;font-size:11px;margin-left:7px}
+.bounty-settled-people{margin:0;font-size:12px}
+#fabEfficiencyFeature{display:none!important}
+.corpse-ledger{margin:14px 0 25px;padding:18px!important;border:1px solid #344b5d;border-radius:14px}
+.corpse-ledger-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.corpse-ledger-header h3{margin:5px 0 3px;font-size:20px}
+.corpse-ledger-header .sub{margin:0}
+.corpse-ledger-scroll{overflow-x:auto}
+.corpse-ledger-table{width:100%;min-width:630px;border-collapse:collapse}
+.corpse-ledger-table th,.corpse-ledger-table td{padding:11px 12px;text-align:left;border-bottom:1px solid #314655}
+.corpse-ledger-table th{color:#e8b65c;text-transform:uppercase;letter-spacing:.06em;font-size:10px}
+.corpse-ledger-table tr:last-child td{border-bottom:0}
+.corpse-ledger-table td:nth-child(n+3){font-variant-numeric:tabular-nums}
+.corpse-ledger-table .corpse-spend{font-weight:900;color:#f4eee2}
+.corpse-ledger-table .corpse-share{font-weight:900;color:#e8b65c}
+.corpse-ledger-foot{font-size:11px;margin:12px 0 0}
+@media(max-width:700px){.bounty-watch.bounty-settled{align-items:flex-start}.bounty-settled .bounty-settled-summary{gap:8px}.bounty-settled-people{width:100%}}
+
 </style>
 
 <style>
@@ -715,92 +765,7 @@ select,input{
   <em>Final Sweat data does not affect season metrics until the commissioner finalizes Week 6.</em>
 </div>
 
-<div class="grid">
-
-<section class="money-story-grid">
-  <div class="panel bounty-watch">
-    <div class="kicker">🎯 Bounty Watch</div>
-    <h2>Two marked men. One growing pot.</h2>
-    <div class="sub">If Pete or Tony gets chopped, $50 × weeks remaining is added to the prize pool.</div>
-    <div class="bounty-duo" id="bountyWatchCards"></div>
-    <div class="bounty-foot" id="bountyWatchFoot"></div>
-  </div>
-
-  <div class="panel equity-panel">
-    <div class="kicker">💰 Prize Pool Economics</div>
-    <h2>Survivor Equity</h2>
-    <div class="equity-main">
-      <div>
-        <small>CURRENT SURVIVOR EQUITY</small>
-        <strong id="equityCurrent">$154</strong>
-        <span id="equityFormula">$2,000 guaranteed ÷ 13 survivors</span>
-      </div>
-      <div class="equity-gain">
-        <small>SURVIVAL VALUE GAINED</small>
-        <b id="equityGained">+$11</b>
-        <span>from the prior chop</span>
-      </div>
-    </div>
-
-    <div class="pot-row">
-      <div class="pot-box">
-        <small>GUARANTEED POT</small>
-        <b id="guaranteedPot">$2,000</b>
-        <span>locked in</span>
-      </div>
-      <div class="pot-box max">
-        <small>CURRENT MAX POT</small>
-        <b id="maxPot">$3,050</b>
-        <span id="maxPotDetail">$2,000 locked + $1,050 still hunting</span>
-      </div>
-    </div>
-
-    <div class="next-worth">
-      <div class="next-title">SURVIVE NEXT WEEK</div>
-      <div class="next-path">
-        <span>Normal chop</span>
-        <b id="nextNormal">$167</b>
-        <em id="nextNormalGain">+$13</em>
-      </div>
-      <div class="next-path bounty">
-        <span>🎯 Pete / Tony bounty chop</span>
-        <b id="nextBounty">$213</b>
-        <em id="nextBountyGain">+$59</em>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<section class="v18-story-strip">
-  <div class="v18-story-head">
-    <div>
-      <div class="kicker">SEASON STORYLINES</div>
-      <h2>Three things the standings don't tell you</h2>
-    </div>
-    <div class="pill">WEEKLY RESULTS → AUTO STORYLINES</div>
-  </div>
-  <div class="v18-story-grid">
-    <article class="v18-story lead">
-      <div class="eyebrow">😱 CLOSEST SHAVE YET</div>
-      <h3>Davis escaped by 1.37</h3>
-      <p>The narrowest escape of the season. One tiny scoring swing and the graveyard looks different.</p>
-    </article>
-    <article class="v18-story cool award-card" data-min-week="2">
-      <div class="eyebrow">🏎️ CRUISE CONTROL</div>
-      <h3>Pete is cruising</h3>
-      <p>His closest call is still <strong>24.6 points</strong> above a weekly cut line.</p>
-    </article>
-    <article class="v18-story warn award-card" data-min-week="1">
-      <div class="eyebrow">🧊 THIN ICE</div>
-      <h3>Goofy keeps flirting with disaster</h3>
-      <p>Repeated danger-zone finishes have Goofy living on thin ice.</p>
-    </article>
-  </div>
-</section>
-
-</div>
-
+<div class="dashboard-survival-first">
 <div class="section-title"><div><div class="kicker">Survival board</div><h2>Who is clear of the blade?</h2></div><span class="pill">AVG WEEKLY RANK + WEEK 6 SCORE</span></div>
 <div class="owners">
       <div class="owner safe">
@@ -966,6 +931,99 @@ select,input{
         </div>
       </div></div>
 
+</div>
+
+<div class="grid">
+
+<section class="money-story-grid">
+  <div class="panel equity-panel">
+    <div class="kicker">💰 Prize Pool Economics</div>
+    <h2>Survivor Equity</h2>
+    <div class="equity-main">
+      <div>
+        <small>CURRENT SURVIVOR EQUITY</small>
+        <strong id="equityCurrent">$154</strong>
+        <span id="equityFormula">$2,000 guaranteed ÷ 13 survivors</span>
+      </div>
+      <div class="equity-gain">
+        <small>SURVIVAL VALUE GAINED</small>
+        <b id="equityGained">+$11</b>
+        <span>from the prior chop</span>
+      </div>
+    </div>
+
+    <div class="pot-row">
+      <div class="pot-box">
+        <small>GUARANTEED POT</small>
+        <b id="guaranteedPot">$2,000</b>
+        <span>locked in</span>
+      </div>
+      <div class="pot-box max">
+        <small>CURRENT MAX POT</small>
+        <b id="maxPot">$3,050</b>
+        <span id="maxPotDetail">$2,000 locked + $1,050 still hunting</span>
+      </div>
+    </div>
+
+    <div class="next-worth">
+      <div class="next-title">SURVIVE NEXT WEEK</div>
+      <div class="next-path">
+        <span>Normal chop</span>
+        <b id="nextNormal">$167</b>
+        <em id="nextNormalGain">+$13</em>
+      </div>
+      <div class="next-path bounty">
+        <span>🎯 Pete / Tony bounty chop</span>
+        <b id="nextBounty">$213</b>
+        <em id="nextBountyGain">+$59</em>
+      </div>
+    </div>
+  </div>
+  <div class="panel bounty-watch">
+    <div class="kicker">🎯 Bounty Watch</div>
+    <h2>Two marked men. One growing pot.</h2>
+    <div class="sub">If Pete or Tony gets chopped, $50 × weeks remaining is added to the prize pool.</div>
+    <div class="bounty-duo" id="bountyWatchCards"></div>
+    <div class="bounty-foot" id="bountyWatchFoot"></div>
+  </div>
+</section>
+
+
+<section class="v18-story-strip">
+  <div class="v18-story-head">
+    <div>
+      <div class="kicker">SEASON STORYLINES</div>
+      <h2>Three things the standings don't tell you</h2>
+    </div>
+    <div class="pill">WEEKLY RESULTS → AUTO STORYLINES</div>
+  </div>
+  <div class="v18-story-grid">
+    <article class="v18-story lead">
+      <div class="eyebrow">😱 CLOSEST SHAVE YET</div>
+      <h3>Davis escaped by 1.37</h3>
+      <p>The narrowest escape of the season. One tiny scoring swing and the graveyard looks different.</p>
+    </article>
+    <article class="v18-story cool award-card" data-min-week="2">
+      <div class="eyebrow">🏎️ CRUISE CONTROL</div>
+      <h3>Pete is cruising</h3>
+      <p>His closest call is still <strong>24.6 points</strong> above a weekly cut line.</p>
+    </article>
+    <article class="v18-story warn award-card" data-min-week="1">
+      <div class="eyebrow">🧊 THIN ICE</div>
+      <h3>Goofy keeps flirting with disaster</h3>
+      <p>Repeated danger-zone finishes have Goofy living on thin ice.</p>
+    </article>
+  </div>
+</section>
+<section id="grimReaperLive" class="panel" style="margin:14px 0 24px;border-left:4px solid #d96b65;background:#132331;padding:20px;border-radius:14px">
+ <div class="kicker">☠ PLAYER JOURNEYS · LIVE CHOPPED ROSTER TRACKER</div>
+ <h2 style="margin:6px 0 8px">The Grim Reaper</h2>
+ <p class="sub" id="grimReaperSource">Counting appearances on finalized chopped rosters.</p>
+ <div id="grimReaperLiveBody" aria-live="polite">Checking chopped roster records…</div>
+</section>
+
+</div>
+
 <div class="section-title"><div><div class="kicker">Chop economy</div><h2>What was the dead roster actually worth?</h2></div><span class="pill">CALCULATED FROM WINNING FAB BIDS</span></div>
 <div class="econ">
 <div class="panel"><div class="kicker">Most valuable corpse</div><div class="metric">$1,184</div><b>Shoe · Week 3</b><p class="sub">The league emptied 9.8% of its available FAB into one chopped roster.</p></div>
@@ -974,6 +1032,12 @@ select,input{
 <div class="panel"><div class="kicker">Biggest single bite</div><div class="metric">$431</div><b>Ja'Marr Chase</b><p class="sub">Largest winning FAB bid of the season so far.</p></div>
 </div>
 
+
+<section id="corpseLedger" class="panel corpse-ledger" aria-label="Chopped roster FAB ledger">
+  <div class="corpse-ledger-header"><div><div class="kicker">⚰ THE CORPSE LEDGER</div><h3>What every chopped roster fetched</h3><p class="sub">First Wednesday waiver run after each elimination · winning FAB bids only</p></div><span class="pill">WEEK BY WEEK</span></div>
+  <div class="corpse-ledger-scroll"><table class="table corpse-ledger-table"><thead><tr><th>Week</th><th>Eliminated</th><th>FAB claimed</th><th>League FAB before waivers</th><th>Share spent</th></tr></thead><tbody id="corpseLedgerBody"><tr><td colspan="5">Awaiting finalized waiver results…</td></tr></tbody></table></div>
+  <p class="sub corpse-ledger-foot">Share spent = FAB spent on that week's chopped players ÷ all managers' remaining FAB entering that waiver run. Players claimed later are excluded.</p>
+</section>
 
 <div class="fab-efficiency-feature" id="fabEfficiencyFeature">
   <div class="section-title">
@@ -1204,7 +1268,7 @@ function renderAwardUnlocks(week=completedWeekForAwards()){
     el.hidden = week < Number(el.dataset.minWeek||1);
   });
 
-  const reapers=grimReapersThrough(week);
+  const reapers=[]; // Legacy mock Grim Reaper disabled; live leaderboard below uses actual roster rows.
   const panel=document.getElementById('grimReaperPanel');
   const cards=document.getElementById('grimReaperCards');
   if(panel && cards){
@@ -1879,6 +1943,17 @@ function renderBountyEconomy(){
   // Only still-active targets contribute to the maximum remaining bounty pool.
   let remainingBounty=0;
   activeTargets.forEach((_,i)=>remainingBounty+=bountyAmountForWeek(nextWeek+i));
+  const bountyPanel=document.querySelector('.bounty-watch');
+  if(bountyPanel){
+    const settled=activeTargets.length===0;
+    bountyPanel.classList.toggle('bounty-settled',settled);
+    let summary=bountyPanel.querySelector('.bounty-settled-summary');
+    if(!summary){summary=document.createElement('div');summary.className='bounty-settled-summary';bountyPanel.querySelector('.bounty-duo').before(summary);}
+    if(settled){
+      const entries=targets.map(name=>({name,week:replayChopWeek(name)}));
+      summary.innerHTML=`<div class="bounty-settled-top"><strong>2 / 2</strong><span>BOUNTIES CLAIMED</span></div><div class="bounty-settled-money">${currency0(completedBountyTotal())} <small>added to the prize pool</small></div><div class="bounty-settled-people">${entries.map(x=>`${x.name} · W${x.week}`).join(' &nbsp;|&nbsp; ')}</div>`;
+    }else summary.innerHTML='';
+  }
   document.getElementById('bountyWatchFoot').textContent=
     activeTargets.length
       ? `Maximum remaining bounty pool: ${currency0(remainingBounty)} across ${activeTargets.length} remaining target${activeTargets.length===1?'':'s'}.`
@@ -2063,6 +2138,10 @@ async function renderRealSeasonWaiverAnalytics(){
     const leagueFab=snapshots.filter(s=>Number(s.week)===week+1).reduce((sum,s)=>sum+Number(s.fab_before_waivers||0),0);
     return {week,owner:r.chopped_owner||REPLAY_CHOPPED[String(week)]||'Unknown',value,leagueFab,share:leagueFab>0?value/leagueFab:null};
   });
+  const ledgerBody=document.getElementById('corpseLedgerBody');
+  if(ledgerBody){
+    ledgerBody.innerHTML=[...corpses].sort((a,b)=>a.week-b.week).map(c=>`<tr><td><b>W${c.week}</b></td><td>${escHtml(c.owner)}</td><td class="corpse-spend">${money0(c.value)}</td><td>${c.leagueFab>0?money0(c.leagueFab):'Not recorded'}</td><td class="corpse-share">${c.share!==null?(c.share*100).toFixed(1)+'%':'—'}</td></tr>`).join('');
+  }
   const most=[...corpses].sort((a,b)=>b.value-a.value)[0], cheap=[...corpses].sort((a,b)=>a.value-b.value)[0];
   const avg=corpses.reduce((s,x)=>s+x.value,0)/Math.max(1,corpses.length);
   const bite=[...corpseTx].sort((a,b)=>Number(b.winning_bid)-Number(a.winning_bid))[0];
@@ -2125,10 +2204,93 @@ async function renderRealSeasonWaiverAnalytics(){
   }
 }
 
+
+// STORYLINES AUDIT PREVIEW: only finalized weeks; never use demo claims as real facts.
+
+async function renderLiveGrimReaper(productionMode){
+ const target=document.getElementById('grimReaperLiveBody'), source=document.getElementById('grimReaperSource');
+ if(!target)return;
+ let records=[],chops=[];
+ if(productionMode){
+   const [rosterResult,chopResult]=await Promise.all([
+     btbSupabase.from('chopped_rosters').select('week,owner_name,player_name').order('week'),
+     btbSupabase.from('finalized_chops').select('week,owner_name').order('week')
+   ]);
+   if(rosterResult.error||chopResult.error){
+     target.textContent='Chopped roster records are not accessible yet.';
+     return;
+   }
+   records=rosterResult.data||[];
+   chops=chopResult.data||[];
+   source.textContent='Finalized chopped roster appearances';
+ }else{
+   try{
+     const local=JSON.parse(localStorage.getItem('btb_test_sandbox_v1')||'{}');
+     records=local.chopped_rosters||[];
+     chops=local.finalized_chops||[];
+   }catch(e){}
+   source.textContent='Chopped roster appearances';
+ }
+ const valid=new Map(chops.map(r=>[Number(r.week),String(r.owner_name||'').trim().toLowerCase()]));
+ const map=new Map();
+ for(const r of records){
+   const week=Number(r.week),owner=String(r.owner_name||'').trim().toLowerCase();
+   if(!valid.has(week)||valid.get(week)!==owner)continue;
+   const player=String(r.player_name||'').trim().replace(/\s+/g,' ');
+   if(!player)continue;
+   const key=player.toLowerCase().replace(/[’]/g,"'");
+   if(!map.has(key))map.set(key,{player,weeks:new Set(),owners:new Map()});
+   const item=map.get(key);
+   item.weeks.add(week);item.owners.set(week,String(r.owner_name||''));
+ }
+ const leaders=[...map.values()].map(r=>({...r,count:r.weeks.size})).filter(r=>r.count>=2)
+   .sort((a,b)=>b.count-a.count||a.player.localeCompare(b.player));
+ if(!leaders.length){
+   target.innerHTML='<p class="sub">No repeat victims yet. A player must appear on at least two different finalized chopped rosters to qualify.</p>';
+   return;
+ }
+ const max=leaders[0].count,top=leaders.filter(r=>r.count===max),show=leaders.slice(0,5);
+ const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ target.innerHTML=`<p style="margin:8px 0 16px"><strong>${escape(top.map(x=>x.player).join(top.length===2?' & ':', '))}</strong> ${top.length>1?'are tied for the lead':'leads the league'} with <b>${max}</b> chopped roster appearances.</p>
+ <div style="display:grid;gap:8px">${show.map((r,i)=>`<div style="padding:12px;border:1px solid #334b59;border-radius:10px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>${i+1}. ${escape(r.player)}</b><div class="sub" style="font-size:12px;margin-top:4px">${[...r.weeks].sort((a,b)=>a-b).map(w=>`W${w} · ${escape(r.owners.get(w))}`).join(' &nbsp;·&nbsp; ')}</div></div><b style="color:#ff9b92">${r.count} chops</b></div>`).join('')}</div>`;
+}
+
+function renderAuditedStorylines(){
+  const strip=document.querySelector('.v18-story-strip');
+  if(!strip)return;
+  const weeks=Object.keys(REPLAY_CHOPPED).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);
+  const rows=[];
+  weeks.forEach(week=>{
+    const eliminated=REPLAY_CHOPPED[String(week)];
+    const scores=REPLAY_WEEKLY[String(week)]||{};
+    const cut=Number(scores[eliminated]);
+    if(!Number.isFinite(cut)||scores[eliminated]===undefined)return;
+    Object.entries(scores).forEach(([name,raw])=>{
+      if(name===eliminated || weeks.some(w=>w<week&&REPLAY_CHOPPED[String(w)]===name))return;
+      const score=Number(raw);
+      if(Number.isFinite(score)&&score>cut)rows.push({week,name,margin:score-cut});
+    });
+  });
+  const closest=[...rows].sort((a,b)=>a.margin-b.margin)[0];
+  const byName={};rows.forEach(r=>(byName[r.name]??=[]).push(r));
+  const active=new Set(REPLAY_NAMES.filter(n=>!weeks.some(w=>REPLAY_CHOPPED[String(w)]===n)));
+  const eligible=Object.entries(byName).filter(([name,records])=>active.has(name)&&records.length===weeks.length&&weeks.length>=2);
+  const cruise=eligible.map(([name,records])=>({name,margin:Math.min(...records.map(r=>r.margin))})).sort((a,b)=>b.margin-a.margin)[0];
+  const danger=eligible.map(([name,records])=>({name,count:records.filter(r=>r.margin<=10).length,lowest:Math.min(...records.map(r=>r.margin))})).filter(r=>r.count>=2).sort((a,b)=>b.count-a.count||a.lowest-b.lowest)[0];
+  const cards=strip.querySelectorAll('.v18-story');
+  const set=(i,title,desc)=>{const c=cards[i];if(!c)return;c.querySelector('h3').textContent=title;c.querySelector('p').textContent=desc;};
+  set(0,closest?`${closest.name} escaped by ${closest.margin.toFixed(2)}`:'Not enough finalized scores',closest?`Week ${closest.week} · narrowest recorded margin above the eliminated score.`:'Awaiting complete finalized weekly results.');
+  set(1,cruise?`${cruise.name} is cruising`:'No qualifying leader yet',cruise?`Smallest cushion across ${weeks.length} completed weeks: ${cruise.margin.toFixed(2)} points.`:'Requires at least two finalized weeks and complete scores for a surviving manager.');
+  set(2,danger?`${danger.name} lives on thin ice`:'Nobody qualifies yet',danger?`${danger.count} survivals within 10 points of the weekly cut line.`:'Requires two or more survivals within 10 points of the cut line.');
+  const pill=strip.querySelector('.v18-story-head .pill');
+  if(pill)pill.remove();
+  strip.classList.remove('real-season-hidden');
+}
+
 function applyRealSeasonPresentation(){
   // Static V41 analytics are demo-only. In real-season mode they stay hidden until
   // each module is wired to real commissioner inputs; this prevents mock facts leaking public.
-  document.querySelector('.v18-story-strip')?.classList.add('real-season-hidden');
+  renderAuditedStorylines();
   setSectionHiddenByKicker('Chop economy',true);
   document.getElementById('fabEfficiencyFeature')?.classList.add('real-season-hidden');
   setSectionHiddenByKicker('Player journeys',true);
@@ -2228,6 +2390,8 @@ async function loadPersistentChops(state){
 
   CURRENT_SURVIVORS=Math.max(1,18-Object.keys(REPLAY_CHOPPED).length);
   renderAwardUnlocks();
+  renderLiveGrimReaper(productionMode);
+  if(!productionMode) renderAuditedStorylines();
   refreshEliminationVisuals();
   renderFactions();
   renderBountyEconomy();
