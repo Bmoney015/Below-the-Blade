@@ -97,7 +97,10 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
       <button class="red" id="finalizeBtn">Finalize Week</button>
       <button class="green hidden" id="startNextWeekBtn">Start Next Week →</button>
     </div>
-    <div class="status" id="saveStatus"></div>
+    <div class="status" id="saveStatus"></div><div id="chopForecastAdmin" style="margin-top:20px;padding:16px;border:1px solid #6b5736;border-radius:12px;background:#19252d">
+<h3>🪓 Friday Chop Forecast</h3><p class="smallprint">Uses projected FINAL team totals, current points, and starters left. Player names are not needed. This does not affect Live Sweat or eliminations.</p>
+<div class="actions"><button type="button" id="chopPreviewBtn">Preview Chop Forecast</button><button type="button" class="green" id="chopPublishBtn" disabled>Publish Frozen Forecast</button></div>
+<div id="chopPreviewResults" style="margin-top:12px;overflow-x:auto"></div><div class="status" id="chopForecastStatus"></div></div>
   </section>
 
 
@@ -753,5 +756,49 @@ renderRows();initClient();
 <label>Description<textarea id="shoeyAdminDesc" rows="3" style="width:100%"></textarea></label>
 <div style="display:flex;align-items:center;gap:14px;margin:16px 0"><button id="shoeyAdminSave" type="button" style="background:#d7a85e;color:#10202e;padding:12px 20px;font-weight:bold">Save Exhibit</button><span id="shoeyAdminMessage" aria-live="polite"></span></div>
 <p style="font-size:12px">Photo uploads are stored in the dedicated Supabase Shoey bucket. Existing screenshots are retained unless you select a replacement.</p>
-</section><script src="../shoey/shoey-production-admin.js"></script></body>
+</section><script src="../shoey/shoey-production-admin.js"></script><script src="../chop/chop-model.js"></script>
+<script>
+(function(){
+ let preview=null;
+ const $c=id=>document.getElementById(id);
+ function notice(message,ok){const el=$c('chopForecastStatus');el.textContent=message;el.style.color=ok?'#91d4a7':'#f3a3a0'}
+ function invalidate(){preview=null;$c('chopPublishBtn').disabled=true;}
+ ['scoreRows','weekNumber','weekStatus'].forEach(id=>$c(id).addEventListener('input',invalidate));
+ $c('scoreRows').addEventListener('change',invalidate);
+ $c('chopPreviewBtn').addEventListener('click',()=>{
+  invalidate();
+  const week=Number($c('weekNumber').value);
+  if(!Number.isInteger(week)||week<1||week>18)return notice('Invalid week.',false);
+  if($c('weekStatus').value!=='LIVE')return notice('Preview requires a LIVE week.',false);
+  const rows=[...document.querySelectorAll('#scoreRows tr[data-owner]')];
+  const teams=[],missing=[];
+  for(const tr of rows){
+   const owner=tr.dataset.owner,proj=tr.querySelector('.projected').value.trim(),score=tr.querySelector('.score').value.trim(),left=tr.querySelector('.left').value.trim();
+   if(proj===''||left===''){missing.push(owner);continue}
+   const projection=Number(proj),current=score===''?0:Number(score),remaining=Number(left);
+   if(!Number.isFinite(projection)||!Number.isFinite(current)||!Number.isInteger(remaining)||remaining<0||remaining>8||projection<current||current<0){missing.push(owner);continue}
+   teams.push({owner,projection,current,remaining});
+  }
+  if(missing.length)return notice('Missing/invalid projection, score, or starters left for: '+missing.join(', ')+'. Projected total must be ≥ points scored.',false);
+  if(teams.length<2)return notice('At least two survivors are required.',false);
+  const output=BTBChopModel.simulate(teams,40000,26);
+  preview={week,teams:output,inputs:teams,model:{version:'team-normal-v1',baseline_sd:26,simulations:40000}};
+  const safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  $c('chopPreviewResults').innerHTML='<table style="width:100%;font-size:12px"><thead><tr><th>Owner</th><th>Final proj</th><th>Starters left</th><th>Chop risk</th></tr></thead><tbody>'+output.map(r=>'<tr><td>'+safe(r.owner)+'</td><td>'+r.projection.toFixed(1)+'</td><td>'+r.remaining+'</td><td><b>'+(100*r.risk).toFixed(1)+'%</b></td></tr>').join('')+'</tbody></table>';
+  $c('chopPublishBtn').disabled=false;
+  notice('Preview ready (40,000 simulated weeks). Publishing freezes these probabilities.',true);
+ });
+ $c('chopPublishBtn').addEventListener('click',async()=>{
+  if(!preview)return notice('Preview first.',false);
+  if(!sb)return notice('Log in first.',false);
+  if(!confirm('Publish frozen Week '+preview.week+' Friday Chop Forecast? This replaces any previously published forecast for this week.'))return;
+  const {data:state,error:stateError}=await sb.from('league_state').select('current_week,week_status').eq('id',1).single();
+  if(stateError||Number(state?.current_week)!==preview.week||state.week_status!=='LIVE')return notice('Live week changed or could not be verified. Not published.',false);
+  const {error}=await sb.from('chop_forecasts').upsert({...preview,published_at:new Date().toISOString()},{onConflict:'week'});
+  if(error)return notice('NOT PUBLISHED: '+error.message,false);
+  notice('Week '+preview.week+' forecast published and frozen. Later score saves will not change it.',true);invalidate();
+ });
+})();
+</script>
+</body>
 </html>

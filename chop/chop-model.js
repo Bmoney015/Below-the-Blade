@@ -1,0 +1,17 @@
+(function(g){"use strict";
+function simulate(teams,trials,baselineSD){
+ let seed=20261023;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return (seed+0.5)/4294967296};
+ const counts=teams.map(()=>0);
+ for(let i=0;i<trials;i++){
+  let lowest=Infinity,loser=-1;
+  teams.forEach((t,j)=>{
+   const u=random(),v=random(),z=Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+   const sd=baselineSD*Math.sqrt(t.remaining/8);
+   const score=t.current+Math.max(0,t.projection-t.current+sd*z);
+   if(score<lowest){lowest=score;loser=j}
+  });counts[loser]++;
+ }
+ return teams.map((t,i)=>({...t,risk:counts[i]/trials})).sort((a,b)=>b.risk-a.risk);
+}
+g.BTBChopModel={simulate};
+})(window);

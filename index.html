@@ -814,6 +814,10 @@ select,input{
   </div>
 </section>
 
+<section class="final-sweat-panel" id="chopForecastPanel" hidden style="margin-top:14px">
+<div class="final-sweat-head"><div><div class="kicker">🪓 FRIDAY CHOP FORECAST</div><h2>Who's Next for the Blade?</h2><p id="chopForecastSubtitle">Frozen pre-weekend elimination estimates</p></div></div>
+<div id="chopForecastTop"></div><details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700">View all surviving teams</summary><div id="chopForecastFull" style="margin-top:12px"></div></details>
+<p style="font-size:11px;opacity:.7;margin-top:12px">Illustrative simulation using team-level projections and starters remaining; not live probabilities.</p></section>
 <div class="completed-context" id="completedContext">
   <span>COMPLETED ANALYTICS</span>
   <b>Through Week 5</b>
@@ -2686,4 +2690,23 @@ renderReplayBase();
 
 <script src="power/power-data.js"></script>
 <script src="power/power-rankings.js"></script>
-<script src="shoey/shoey-production.js"></script></body></html>
+<script src="shoey/shoey-production.js"></script><script>
+(async function(){
+ const panel=document.getElementById('chopForecastPanel');
+ try{
+  if(typeof btbSupabase==='undefined')return;
+  const {data:state,error:se}=await btbSupabase.from('league_state').select('current_week,week_status').eq('id',1).single();
+  if(se||!state||state.week_status!=='LIVE')return;
+  const {data,error}=await btbSupabase.from('chop_forecasts').select('week,teams,published_at').eq('week',state.current_week).maybeSingle();
+  if(error||!data||!Array.isArray(data.teams)||!data.teams.length)return;
+  const rows=[...data.teams].sort((a,b)=>b.risk-a.risk);
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const line=r=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #ffffff22"><b>'+esc(r.owner)+'</b><span>'+Number(r.projection).toFixed(1)+' projected · <strong>'+(r.risk*100).toFixed(1)+'%</strong></span></div>';
+  document.getElementById('chopForecastTop').innerHTML=rows.slice(0,5).map(line).join('');
+  document.getElementById('chopForecastFull').innerHTML=rows.map(line).join('');
+  document.getElementById('chopForecastSubtitle').textContent='Week '+data.week+' · Frozen forecast · Published '+new Date(data.published_at).toLocaleDateString();
+  panel.hidden=false;
+ }catch(e){console.warn('Chop Forecast unavailable',e)}
+})();
+</script>
+</body></html>
