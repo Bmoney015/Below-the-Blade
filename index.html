@@ -2531,6 +2531,12 @@ async function loadLiveFinalSweat(){
     return;
   }
 
+  if(state.final_sweat_active!==true){
+    liveBtn.style.display='none';
+    setDashboardMode('completed');
+    return;
+  }
+
   liveBtn.style.display='';
   liveBtn.innerHTML=`🔴 Final Sweat · Week ${state.current_week}`;
   document.getElementById('sweatKicker').textContent=`🔴 WEEK ${state.current_week} LIVE · FINAL SWEAT`;
@@ -2701,7 +2707,12 @@ renderReplayBase();
   if(error||!data||!Array.isArray(data.teams)||!data.teams.length)return;
   const rows=[...data.teams].sort((a,b)=>b.risk-a.risk);
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const line=r=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #ffffff22"><b>'+esc(r.owner)+'</b><span>'+Number(r.projection).toFixed(1)+' projected · <strong>'+(r.risk*100).toFixed(1)+'%</strong></span></div>';
+  const maxRisk=Math.max(0.001,...rows.map(r=>Number(r.risk)||0));
+  const line=(r,i)=>'<div style="padding:9px 0;border-bottom:1px solid #ffffff18">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:7px">'+
+    '<b>'+esc(r.owner)+'</b><span style="white-space:nowrap;font-size:12px;color:#c7d5dd">'+Number(r.projection).toFixed(1)+' proj · <strong style="color:#f5f0e8;font-size:14px">'+(r.risk*100).toFixed(1)+'%</strong></span></div>'+
+    '<div role="img" aria-label="'+esc(r.owner)+' chop risk '+(r.risk*100).toFixed(1)+' percent" style="height:9px;border-radius:20px;background:#34434c;overflow:hidden">'+
+    '<div style="width:'+Math.max(0,Math.min(100,(r.risk/maxRisk)*100)).toFixed(2)+'%;height:100%;border-radius:20px;background:'+(i===0?'#e47c5e':'#b99b63')+'"></div></div></div>';
   document.getElementById('chopForecastTop').innerHTML=rows.slice(0,5).map(line).join('');
   document.getElementById('chopForecastFull').innerHTML=rows.map(line).join('');
   document.getElementById('chopForecastSubtitle').textContent='Week '+data.week+' · Frozen forecast · Published '+new Date(data.published_at).toLocaleDateString();

@@ -76,6 +76,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
     <div class="row" style="margin-top:12px">
       <div class="field small"><label>CURRENT WEEK</label><input id="weekNumber" type="number" min="1" max="17" value="6"></div>
       <div class="field small"><label>WEEK STATUS</label><select id="weekStatus"><option value="LIVE">LIVE</option><option value="COMPLETED">COMPLETED</option></select></div>
+      <div class="field small"><label>FINAL SWEAT DISPLAY</label><select id="finalSweatActive"><option value="false">OFF (Friday)</option><option value="true">ON (Sunday/Monday)</option></select></div>
       <div class="field small"><label>SHOW PLAYER NAMES</label><select id="showPlayers"><option value="true">YES</option><option value="false">NO</option></select></div>
       <div class="field small"><label>FAB EFFICIENCY</label><select id="showFabEfficiency"><option value="true">ON</option><option value="false">OFF</option></select></div>
       <button id="loadBtn">Load saved data</button>
@@ -235,7 +236,7 @@ function renderRows(data=[]){
 }
 function applyState(state){
   if(!state)return;
-  $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('showPlayers').value=String(state.show_remaining_players !== false);$('showFabEfficiency').value=String(state.show_fab_efficiency !== false);
+  $('weekNumber').value=state.current_week;$('weekStatus').value=state.week_status;$('finalSweatActive').value=String(state.final_sweat_active===true);$('showPlayers').value=String(state.show_remaining_players !== false);$('showFabEfficiency').value=String(state.show_fab_efficiency !== false);
   const p=$('statePill');p.textContent=`WEEK ${state.current_week} · ${state.week_status}`;p.className='pill '+(state.week_status==='LIVE'?'live':'final');
   const nextBtn=$('startNextWeekBtn');
   if(nextBtn){
@@ -527,7 +528,7 @@ function collectRows(){
 async function saveScores(){const {error}=await sb.from('weekly_scores').upsert(collectRows(),{onConflict:'week,owner_name'});if(error)throw error}
 async function saveState(status){
   const week=Number($('weekNumber').value);
-  const {error}=await sb.from('league_state').update({current_week:week,week_status:status,show_remaining_players:$('showPlayers').value==='true',show_fab_efficiency:$('showFabEfficiency').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
+  const {error}=await sb.from('league_state').update({current_week:week,week_status:status,final_sweat_active:$('finalSweatActive').value==='true',show_remaining_players:$('showPlayers').value==='true',show_fab_efficiency:$('showFabEfficiency').value==='true',updated_at:new Date().toISOString()}).eq('id',1);
   if(error)throw error;applyState({current_week:week,week_status:status});
 }
 
@@ -559,6 +560,7 @@ async function startNextWeek(){
     r=await sb.from('league_state').update({
       current_week:nextWeek,
       week_status:'LIVE',
+      final_sweat_active:false,
       updated_at:new Date().toISOString()
     }).eq('id',1);
     if(r.error)throw r.error;
@@ -694,7 +696,7 @@ $('loginBtn').addEventListener('click',async()=>{
 });
 $('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();$('adminCard').classList.add('hidden');$('fabCard').classList.add('hidden');$('dangerCard').classList.add('hidden');$('loginBtn').classList.remove('hidden');$('logoutBtn').classList.add('hidden');setStatus('authStatus','Logged out.')});
 $('loadBtn').addEventListener('click',loadStateAndScores);
-$('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
+$('saveLiveBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving live week...');await saveScores();await saveState('LIVE');setStatus('saveStatus','Saved. Week is now LIVE. Final Sweat display: '+($('finalSweatActive').value==='true'?'ON':'OFF')+'.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('saveOnlyBtn').addEventListener('click',async()=>{try{setStatus('saveStatus','Saving scores...');await saveScores();setStatus('saveStatus','Scores saved.',true)}catch(e){setStatus('saveStatus',e.message,false)}});
 $('resetLiveFieldsBtn').addEventListener('click',resetLiveEntryFields);
 $('startNextWeekBtn').addEventListener('click',startNextWeek);
