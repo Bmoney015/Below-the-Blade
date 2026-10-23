@@ -97,12 +97,7 @@ th{font-size:9px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase
       <button class="red" id="finalizeBtn">Finalize Week</button>
       <button class="green hidden" id="startNextWeekBtn">Start Next Week →</button>
     </div>
-    <div class="status" id="saveStatus"></div><div class="chop-forecast-admin" style="margin-top:20px;padding:16px;border:1px solid #6b5736;border-radius:12px;background:#19252d">
-<h3 style="margin:0 0 8px">🪓 Friday Chop Forecast</h3>
-<p class="smallprint">Independent of Live Sweat. Enter each surviving team's projected FINAL score and Starters Left above. Player names are not needed. Preview first; publish only when ready. Forecast stays frozen after subsequent score saves.</p>
-<div class="actions"><button id="chopPreviewBtn" type="button">Preview Chop Forecast</button><button id="chopPublishBtn" class="green" type="button" disabled>Publish Frozen Forecast</button></div>
-<div id="chopPreviewResults" style="margin-top:12px"></div><div class="status" id="chopForecastStatus"></div>
-</div>
+    <div class="status" id="saveStatus"></div>
   </section>
 
 
@@ -758,54 +753,5 @@ renderRows();initClient();
 <label>Description<textarea id="shoeyAdminDesc" rows="3" style="width:100%"></textarea></label>
 <div style="display:flex;align-items:center;gap:14px;margin:16px 0"><button id="shoeyAdminSave" type="button" style="background:#d7a85e;color:#10202e;padding:12px 20px;font-weight:bold">Save Exhibit</button><span id="shoeyAdminMessage" aria-live="polite"></span></div>
 <p style="font-size:12px">Photo uploads are stored in the dedicated Supabase Shoey bucket. Existing screenshots are retained unless you select a replacement.</p>
-</section><script src="../shoey/shoey-production-admin.js"></script>
-<script src="/chop/chop-model.js"></script>
-<script>
-(function(){
- let preview=null;
- const el=id=>document.getElementById(id);
- function status(s,good){el('chopForecastStatus').textContent=s;el('chopForecastStatus').style.color=good?'#91d4a7':'#f3a3a0'}
- el('chopPreviewBtn').addEventListener('click',()=>{
-   preview=null;el('chopPublishBtn').disabled=true;
-   const week=Number(el('weekNumber').value);
-   if(!Number.isInteger(week)||week<1||week>17)return status('Invalid week.',false);
-   if(el('weekStatus').value!=='LIVE')return status('Only LIVE weeks can have a Friday forecast.',false);
-   const rows=[...document.querySelectorAll('#scoreRows tr[data-owner]')];
-   const teams=[],missing=[];
-   for(const tr of rows){
-     const owner=tr.dataset.owner;
-     const proj=tr.querySelector('.projected').value.trim();
-     const score=tr.querySelector('.score').value.trim();
-     const left=tr.querySelector('.left').value.trim();
-     if(!proj||left===''){missing.push(owner);continue}
-     const projection=Number(proj),current=score===''?0:Number(score),remaining=Number(left);
-     if(!Number.isFinite(projection)||!Number.isFinite(current)||!Number.isInteger(remaining)||remaining<0||remaining>8||projection<current||current<0){missing.push(owner);continue}
-     teams.push({owner,projection,current,remaining});
-   }
-   if(missing.length)return status('Missing or invalid projected total / score / starters left for: '+missing.join(', ')+'. Projection must be at least current points.',false);
-   if(teams.length<2)return status('At least two surviving teams required.',false);
-   // Deliberately do not require Remaining Players/Note or exclude flag.
-   const result=window.BTBChopModel.simulate(teams,32000,26);
-   preview={week,teams:result,inputs:teams,sd:26,simulations:32000};
-   el('chopPreviewResults').innerHTML='<table style="width:100%;font-size:12px"><thead><tr><th>Manager</th><th>Proj</th><th>Left</th><th>Chop risk</th></tr></thead><tbody>'+result.map(r=>'<tr><td>'+r.owner.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</td><td>'+r.projection.toFixed(1)+'</td><td>'+r.remaining+'</td><td><b>'+(r.risk*100).toFixed(1)+'%</b></td></tr>').join('')+'</tbody></table>';
-   el('chopPublishBtn').disabled=false;
-   status('Preview ready. 32,000 simulated weeks · 26-point baseline SD · starters-left adjustment. Publish freezes this result.',true);
- });
- document.querySelector('#scoreRows').addEventListener('input',()=>{preview=null;el('chopPublishBtn').disabled=true;});
- el('chopPublishBtn').addEventListener('click',async()=>{
-   if(!preview)return status('Preview first.',false);
-   if(Number(el('weekNumber').value)!==preview.week)return status('Week changed. Preview again.',false);
-   const liveInputs=[...document.querySelectorAll('#scoreRows tr[data-owner]')].map(tr=>({owner:tr.dataset.owner,projection:Number(tr.querySelector('.projected').value),current:Number(tr.querySelector('.score').value||0),remaining:Number(tr.querySelector('.left').value)}));
-   if(JSON.stringify(liveInputs)!==JSON.stringify(preview.inputs))return status('Forecast inputs changed since preview. Preview again before publishing.',false);
-   if(!confirm('Publish Week '+preview.week+' Friday Chop Forecast? This will replace any previously published forecast for that week.'))return;
-   if(!sb)return status('Sign in as commissioner first.',false);
-   const payload={week:preview.week,teams:preview.teams,inputs:preview.inputs,model:{version:'team-normal-v1',baseline_sd:preview.sd,simulations:preview.simulations},published_at:new Date().toISOString()};
-   const {error}=await sb.from('chop_forecasts').upsert(payload,{onConflict:'week'});
-   if(error)return status('NOT PUBLISHED: '+error.message,false);
-   status('Published frozen Week '+preview.week+' forecast. Live score saves will not alter it.',true);
-   preview=null;el('chopPublishBtn').disabled=true;
- });
-})();
-</script>
-</body>
+</section><script src="../shoey/shoey-production-admin.js"></script></body>
 </html>
